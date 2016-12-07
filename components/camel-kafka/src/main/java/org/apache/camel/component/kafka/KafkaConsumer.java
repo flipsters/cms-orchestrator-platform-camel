@@ -16,6 +16,7 @@
  */
 package org.apache.camel.component.kafka;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ import kafka.consumer.ConsumerTimeoutException;
 import kafka.consumer.KafkaStream;
 import kafka.javaapi.consumer.ConsumerConnector;
 import kafka.message.MessageAndMetadata;
+import kafka.serializer.Decoder;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.impl.DefaultConsumer;
@@ -204,6 +206,17 @@ public class KafkaConsumer extends DefaultConsumer {
         public AutoCommitConsumerTask(ConsumerConnector consumer, KafkaStream<byte[], byte[]> stream) {
             this.consumer = consumer;
             this.stream = stream;
+            ConsumerIterator<byte[], byte[]> it = stream.iterator();
+            try {
+                Field valueDecoder = it.getClass().getDeclaredField("valueDecoder");
+                valueDecoder.setAccessible(true);
+                Decoder clientDecoder = (Decoder) valueDecoder.get(it);
+                CamelKafkaExchangeDecoder customDecoder = new CamelKafkaExchangeDecoder();
+                customDecoder.setClientDecoder(clientDecoder);
+                valueDecoder.set(it, customDecoder);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                LOG.error(e.getMessage(), e);
+            }
         }
 
         public void run() {

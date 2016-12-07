@@ -17,7 +17,9 @@
 package org.apache.camel.component.kafka;
 
 import java.net.URISyntaxException;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.function.BiConsumer;
 
 import kafka.message.MessageAndMetadata;
 
@@ -115,16 +117,20 @@ public class KafkaEndpoint extends DefaultEndpoint implements MultipleConsumersS
         return getCamelContext().getExecutorServiceManager().newFixedThreadPool(this, "KafkaTopic[" + configuration.getTopic() + "]", configuration.getConsumerStreams());
     }
 
-    public Exchange createKafkaExchange(MessageAndMetadata<byte[], byte[]> mm) {
+    public Exchange createKafkaExchange(MessageAndMetadata mm) {
         Exchange exchange = new DefaultExchange(this, getExchangePattern());
 
         Message message = new DefaultMessage();
         message.setHeader(KafkaConstants.PARTITION, mm.partition());
         message.setHeader(KafkaConstants.TOPIC, mm.topic());
         if (mm.key() != null) {
-            message.setHeader(KafkaConstants.KEY, new String(mm.key()));
+            message.setHeader(KafkaConstants.KEY, new String((byte[]) mm.key()));
         }
-        message.setBody(mm.message());
+        CamelKafkaGenericObject camelKafkaObject = (CamelKafkaGenericObject) mm.message();
+        message.setBody(camelKafkaObject.getBody());
+        Map<String, Object> headers = camelKafkaObject.getHeaders();
+        headers.forEach(message::setHeader);
+
         exchange.setIn(message);
 
         return exchange;

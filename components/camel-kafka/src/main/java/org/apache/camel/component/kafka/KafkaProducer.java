@@ -16,11 +16,14 @@
  */
 package org.apache.camel.component.kafka;
 
+import java.lang.reflect.Field;
 import java.util.Properties;
 
 import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
+import kafka.producer.async.DefaultEventHandler;
+import kafka.serializer.Encoder;
 import org.apache.camel.CamelException;
 import org.apache.camel.CamelExchangeException;
 import org.apache.camel.Exchange;
@@ -51,6 +54,11 @@ public class KafkaProducer<K, V> extends DefaultProducer {
         if (endpoint.getBrokers() != null) {
             props.put("metadata.broker.list", endpoint.getBrokers());
         }
+        if (endpoint.getSerializerClass() != null
+            && !endpoint.getSerializerClass().equals("kafka.serializer.StringEncoder")
+            && !endpoint.getSerializerClass().equals("kafka.serializer.DefaultEncoder")) {
+            throw new RuntimeException("Unsupported serialization exception !!!");
+        }
         return props;
     }
 
@@ -59,6 +67,18 @@ public class KafkaProducer<K, V> extends DefaultProducer {
         Properties props = getProps();
         ProducerConfig config = new ProducerConfig(props);
         producer = new Producer<K, V>(config);
+        Field f = producer.getClass().getDeclaredField("underlying");
+        f.setAccessible(true);
+        kafka.producer.Producer underlyingProducer = (kafka.producer.Producer) f.get(producer);
+        Field eventHandlerField = underlyingProducer.getClass().getDeclaredField("eventHandler");
+        eventHandlerField.setAccessible(true);
+        DefaultEventHandler eventHandler = (DefaultEventHandler) eventHandlerField.get(underlyingProducer);
+        Field encoder = eventHandler.getClass().getDeclaredField("kafka$producer$async$DefaultEventHandler$$encoder");
+        encoder.setAccessible(true);
+        Encoder<V> clientEncoder = (Encoder<V>) encoder.get(eventHandler);
+        CamelKafkaExchangeEncoder<Encoder<V>, V> customEncoder = new CamelKafkaExchangeEncoder<>();
+        customEncoder.setClientEncoder(clientEncoder);
+        encoder.set(eventHandler, customEncoder);
     }
 
     @Override
@@ -78,17 +98,24 @@ public class KafkaProducer<K, V> extends DefaultProducer {
         boolean hasMessageKey = messageKey != null;
 
         V msg = (V) exchange.getIn().getBody();
+        if (!(msg instanceof byte[] || msg instanceof String)) {
+            throw new RuntimeException("Given type is not supported : " + msg.getClass());
+        }
+        CamelKafkaGenericObject<V> headerMsg = new CamelKafkaGenericObject.CamelKafkaGenericObjectBuilder<V>()
+            .setBody(msg)
+            .setHeaders(exchange.getIn().getHeaders())
+            .build();
         KeyedMessage<K, V> data;
 
         if (hasPartitionKey && hasMessageKey) {
-            data = new KeyedMessage<K, V>(topic, messageKey, partitionKey, msg);
+            data = new KeyedMessage(topic, messageKey, partitionKey, headerMsg);
         } else if (hasPartitionKey) {
-            data = new KeyedMessage<K, V>(topic, partitionKey, msg);
+            data = new KeyedMessage(topic, partitionKey, headerMsg);
         } else if (hasMessageKey) {
-            data = new KeyedMessage<K, V>(topic, messageKey, msg);
+            data = new KeyedMessage(topic, messageKey, headerMsg);
         } else {
             log.warn("No message key or partition key set");
-            data = new KeyedMessage<K, V>(topic, messageKey, partitionKey, msg);
+            data = new KeyedMessage(topic, messageKey, partitionKey, headerMsg);
         }
         producer.send(data);
     }

@@ -1,12 +1,15 @@
 package org.apache.camel.component.kafka;
 
 import kafka.serializer.Encoder;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
 public class CamelKafkaExchangeEncoder<E extends Encoder<V>, V> implements Encoder<CamelKafkaGenericObject<V>> {
+
+  protected final org.slf4j.Logger log = LoggerFactory.getLogger(getClass());
 
   E clientEncoder;
 
@@ -25,8 +28,10 @@ public class CamelKafkaExchangeEncoder<E extends Encoder<V>, V> implements Encod
               .build();
       return getBytes(camelKafkaGenericObject);
     } catch (IOException e) {
-      e.printStackTrace();
-      return null;
+      log.error("Encountered exception in decoding : "
+          + vCamelKafkaGenericObject + " got exception : "
+          + e + " " + e.getMessage());
+      throw new RuntimeException(e.getMessage(), e);
     }
   }
 

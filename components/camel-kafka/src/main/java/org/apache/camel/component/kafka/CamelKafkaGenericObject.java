@@ -22,7 +22,7 @@ public class CamelKafkaGenericObject<A> implements Serializable{
   public void setHeaders(Map<String, Object> headers) {
     if (headers != null) {
       headers.entrySet().stream()
-          .filter(header -> getValidRabbitMQHeaderValue(header.getValue()))
+          .filter(header -> getValidKafkaHeaderValue(header.getValue()))
           .forEach(header -> this.headers.put(header.getKey(), header.getValue()));
     }
   }
@@ -39,7 +39,7 @@ public class CamelKafkaGenericObject<A> implements Serializable{
     return headers;
   }
 
-  private boolean getValidRabbitMQHeaderValue(Object headerValue) {
+  private boolean getValidKafkaHeaderValue(Object headerValue) {
     if (headerValue instanceof String) {
       return true;
     } else if (headerValue instanceof BigDecimal) {

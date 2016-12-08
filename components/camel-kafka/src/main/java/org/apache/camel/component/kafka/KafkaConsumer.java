@@ -83,11 +83,11 @@ public class KafkaConsumer extends DefaultConsumer {
             topicCountMap.put(endpoint.getTopic(), endpoint.getConsumerStreams());
             Map<String, List<KafkaStream<byte[], byte[]>>> consumerMap = consumer.createMessageStreams(topicCountMap);
             List<KafkaStream<byte[], byte[]>> streams = consumerMap.get(endpoint.getTopic());
-
+            streams.forEach(KafkaConsumer::updatedKafkaStream);
             // commit periodically
             if (endpoint.isAutoCommitEnable() != null && !endpoint.isAutoCommitEnable()) {
                 if ((endpoint.getConsumerTimeoutMs() == null || endpoint.getConsumerTimeoutMs() < 0)
-                        && endpoint.getConsumerStreams() > 1) {
+                    && endpoint.getConsumerStreams() > 1) {
                     LOG.warn("consumerTimeoutMs is set to -1 (infinite) while requested multiple consumer streams.");
                 }
                 CyclicBarrier barrier = new CyclicBarrier(endpoint.getConsumerStreams(), new CommitOffsetTask(consumer));
@@ -167,7 +167,7 @@ public class KafkaConsumer extends DefaultConsumer {
                     consumerTimeout = true;
                 }
 
-                if (processed >= endpoint.getBatchSize() || consumerTimeout 
+                if (processed >= endpoint.getBatchSize() || consumerTimeout
                     || (processed > 0 && !hasNext)) { // Need to commit the offset for the last round
                     try {
                         barrier.await(endpoint.getBarrierAwaitTimeoutMs(), TimeUnit.MILLISECONDS);
@@ -198,6 +198,20 @@ public class KafkaConsumer extends DefaultConsumer {
         }
     }
 
+    private static void updatedKafkaStream(KafkaStream<byte[], byte[]> stream) {
+        ConsumerIterator<byte[], byte[]> it = stream.iterator();
+        try {
+            Field valueDecoder = it.getClass().getDeclaredField("valueDecoder");
+            valueDecoder.setAccessible(true);
+            Decoder clientDecoder = (Decoder) valueDecoder.get(it);
+            CamelKafkaExchangeDecoder customDecoder = new CamelKafkaExchangeDecoder();
+            customDecoder.setClientDecoder(clientDecoder);
+            valueDecoder.set(it, customDecoder);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            LOG.error(e.getMessage(), e);
+        }
+    }
+
     class AutoCommitConsumerTask implements Runnable {
 
         private final ConsumerConnector consumer;
@@ -206,17 +220,6 @@ public class KafkaConsumer extends DefaultConsumer {
         public AutoCommitConsumerTask(ConsumerConnector consumer, KafkaStream<byte[], byte[]> stream) {
             this.consumer = consumer;
             this.stream = stream;
-            ConsumerIterator<byte[], byte[]> it = stream.iterator();
-            try {
-                Field valueDecoder = it.getClass().getDeclaredField("valueDecoder");
-                valueDecoder.setAccessible(true);
-                Decoder clientDecoder = (Decoder) valueDecoder.get(it);
-                CamelKafkaExchangeDecoder customDecoder = new CamelKafkaExchangeDecoder();
-                customDecoder.setClientDecoder(clientDecoder);
-                valueDecoder.set(it, customDecoder);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                LOG.error(e.getMessage(), e);
-            }
         }
 
         public void run() {

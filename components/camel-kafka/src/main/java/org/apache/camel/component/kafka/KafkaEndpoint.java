@@ -20,7 +20,9 @@ import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
+import joptsimple.internal.Column;
 import kafka.message.MessageAndMetadata;
 
 import org.apache.camel.Consumer;
@@ -129,7 +131,9 @@ public class KafkaEndpoint extends DefaultEndpoint implements MultipleConsumersS
         CamelKafkaGenericObject camelKafkaObject = (CamelKafkaGenericObject) mm.message();
         message.setBody(camelKafkaObject.getBody());
         Map<String, Object> headers = camelKafkaObject.getHeaders();
-        headers.forEach(message::setHeader);
+        for (Map.Entry<String, Object> header : headers.entrySet()) {
+            message.setHeader(header.getKey(), header.getValue());
+        }
 
         exchange.setIn(message);
 

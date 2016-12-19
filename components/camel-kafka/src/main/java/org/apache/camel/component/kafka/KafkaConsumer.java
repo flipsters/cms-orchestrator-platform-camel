@@ -83,7 +83,9 @@ public class KafkaConsumer extends DefaultConsumer {
             topicCountMap.put(endpoint.getTopic(), endpoint.getConsumerStreams());
             Map<String, List<KafkaStream<byte[], byte[]>>> consumerMap = consumer.createMessageStreams(topicCountMap);
             List<KafkaStream<byte[], byte[]>> streams = consumerMap.get(endpoint.getTopic());
-            streams.forEach(KafkaConsumer::updatedKafkaStream);
+            for (KafkaStream<byte[], byte[]> stream : streams) {
+                KafkaConsumer.updatedKafkaStream(stream);
+            }
             // commit periodically
             if (endpoint.isAutoCommitEnable() != null && !endpoint.isAutoCommitEnable()) {
                 if ((endpoint.getConsumerTimeoutMs() == null || endpoint.getConsumerTimeoutMs() < 0)

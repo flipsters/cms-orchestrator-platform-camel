@@ -19,10 +19,6 @@ package org.apache.camel.component.kafka;
 import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
-
-import joptsimple.internal.Column;
 import kafka.message.MessageAndMetadata;
 
 import org.apache.camel.Consumer;

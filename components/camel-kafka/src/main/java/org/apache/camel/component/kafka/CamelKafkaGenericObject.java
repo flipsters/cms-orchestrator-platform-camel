@@ -21,9 +21,11 @@ public class CamelKafkaGenericObject<A> implements Serializable{
 
   public void setHeaders(Map<String, Object> headers) {
     if (headers != null) {
-      headers.entrySet().stream()
-          .filter(header -> getValidKafkaHeaderValue(header.getValue()))
-          .forEach(header -> this.headers.put(header.getKey(), header.getValue()));
+      for (Map.Entry<String, Object> header : headers.entrySet()) {
+        if (getValidKafkaHeaderValue(header.getValue())) {
+          this.headers.put(header.getKey(), header.getValue());
+        }
+      }
     }
   }
 

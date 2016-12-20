@@ -117,6 +117,17 @@
         <enabled>false</enabled>
       </releases>
     </repository>
+    <repository>
+       <id>redhat.repo</id>
+       <url>https://maven.repository.redhat.com/ga/</url>
+       <name>Redhat Repo</name>
+       <snapshots>
+         <enabled>false</enabled>
+       </snapshots>
+       <releases>
+         <enabled>true</enabled>
+       </releases>
+     </repository>
   </repositories>
 
   <pluginRepositories>

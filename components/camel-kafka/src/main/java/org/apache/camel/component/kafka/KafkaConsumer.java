@@ -227,7 +227,7 @@ public class KafkaConsumer extends DefaultConsumer {
         public void run() {
             ConsumerIterator<byte[], byte[]> it = stream.iterator();
             // only poll the next message if we are allowed to run and are not suspending
-            while (isRunAllowed() && !isSuspendingOrSuspended() && it.hasNext()) {
+            while (isRunAllowed() && !(isSuspended() || isSuspending()) && it.hasNext()) {
                 MessageAndMetadata<byte[], byte[]> mm = it.next();
                 Exchange exchange = endpoint.createKafkaExchange(mm);
                 try {

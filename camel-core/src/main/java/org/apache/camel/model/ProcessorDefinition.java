@@ -49,6 +49,7 @@ import org.apache.camel.builder.DataFormatClause;
 import org.apache.camel.builder.ExpressionBuilder;
 import org.apache.camel.builder.ExpressionClause;
 import org.apache.camel.builder.ProcessorBuilder;
+import org.apache.camel.cms.orchestrator.ForkDefinition;
 import org.apache.camel.model.language.ConstantExpression;
 import org.apache.camel.model.language.ExpressionDefinition;
 import org.apache.camel.model.language.LanguageExpression;
@@ -716,6 +717,18 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
         for (Endpoint endpoint : endpoints) {
             addOutput(new ToDefinition(endpoint, pattern));
         }
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange to the given endpoint
+     *
+     * @param uri  the endpoint to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type fork(String uri) {
+        addOutput(new ForkDefinition(uri));
         return (Type) this;
     }
 

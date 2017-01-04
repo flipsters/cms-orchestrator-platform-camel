@@ -138,6 +138,13 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- aggregator store for cms pipeline -->
+    <dependency>
+      <groupId>flipkart.cms</groupId>
+      <artifactId>cms-aggregator-store</artifactId>
+      <version>1.0-SNAPSHOT</version>
+    </dependency>
+
     <!-- testing -->
     <dependency>
       <groupId>junit</groupId>

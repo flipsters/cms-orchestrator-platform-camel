@@ -4,7 +4,7 @@ import org.apache.camel.AsyncCallback;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
-import org.apache.camel.cms.orchestrator.ForkUtils;
+import org.apache.camel.cms.orchestrator.utils.ForkUtils;
 import org.apache.camel.cms.orchestrator.exception.NoRequestIdPresentException;
 import org.apache.camel.processor.SendProcessor;
 

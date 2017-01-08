@@ -24,6 +24,7 @@ import org.apache.camel.builder.ProcessorBuilder;
 import org.apache.camel.cms.orchestrator.definition.AuditDefinition;
 import org.apache.camel.cms.orchestrator.definition.ForkDefinition;
 import org.apache.camel.cms.orchestrator.definition.JoinableForkDefinition;
+import org.apache.camel.cms.orchestrator.definition.StatusDefinition;
 import org.apache.camel.model.language.ConstantExpression;
 import org.apache.camel.model.language.ExpressionDefinition;
 import org.apache.camel.model.language.LanguageExpression;
@@ -1724,6 +1725,19 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
         LoadBalanceDefinition answer = new LoadBalanceDefinition();
         addOutput(answer);
         return answer.loadBalance(loadBalancer);
+    }
+
+    /**
+     * Creates an entry into the status store, against the exsiting request id.
+     *
+     * @param message the audit message, (you can use {@link org.apache.camel.language.simple.SimpleLanguage} syntax)
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type status(String message) {
+        StatusDefinition answer = new StatusDefinition(message);
+        addOutput(answer);
+        return (Type) this;
     }
 
     /**

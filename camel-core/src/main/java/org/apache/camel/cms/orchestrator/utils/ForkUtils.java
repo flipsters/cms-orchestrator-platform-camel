@@ -1,7 +1,7 @@
-package org.apache.camel.cms.orchestrator;
+package org.apache.camel.cms.orchestrator.utils;
 
-import flipkart.cms.aggregator.client.AggregateStore;
 import org.apache.camel.Exchange;
+import org.apache.camel.cms.orchestrator.OrchestratorConstants;
 import org.apache.camel.cms.orchestrator.exception.NoRequestIdPresentException;
 import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
 import org.apache.commons.collections.CollectionUtils;

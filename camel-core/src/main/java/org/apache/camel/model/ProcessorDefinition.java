@@ -21,6 +21,7 @@ import org.apache.camel.builder.DataFormatClause;
 import org.apache.camel.builder.ExpressionBuilder;
 import org.apache.camel.builder.ExpressionClause;
 import org.apache.camel.builder.ProcessorBuilder;
+import org.apache.camel.cms.orchestrator.definition.AuditDefinition;
 import org.apache.camel.cms.orchestrator.definition.ForkDefinition;
 import org.apache.camel.cms.orchestrator.definition.JoinableForkDefinition;
 import org.apache.camel.model.language.ConstantExpression;
@@ -1723,6 +1724,19 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
         LoadBalanceDefinition answer = new LoadBalanceDefinition();
         addOutput(answer);
         return answer.loadBalance(loadBalancer);
+    }
+
+    /**
+     * Creates an entry into the audit store.
+     *
+     * @param message the audit message, (you can use {@link org.apache.camel.language.simple.SimpleLanguage} syntax)
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type audit(String message) {
+        AuditDefinition answer = new AuditDefinition(message);
+        addOutput(answer);
+        return (Type) this;
     }
 
     /**

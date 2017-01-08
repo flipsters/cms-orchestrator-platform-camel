@@ -20,14 +20,12 @@ public class ForkRouteTest extends TestCase {
         Main main = new Main();
         main.addRouteBuilder(new MyRouteBuilder());
         main.enableTrace();
-        main.bind("foo", new Integer(31));
         main.start();
 
         List<CamelContext> contextList = main.getCamelContexts();
         assertNotNull(contextList);
         assertEquals("Did not get the expected count of Camel contexts", 1, contextList.size());
         CamelContext camelContext = contextList.get(0);
-        assertEquals("Could not find the registry bound object", 31, camelContext.getRegistry().lookupByName("foo"));
 
         MockEndpoint endpoint = camelContext.getEndpoint("mock:results", MockEndpoint.class);
         endpoint.expectedMinimumMessageCount(1);

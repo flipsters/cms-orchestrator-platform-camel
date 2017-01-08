@@ -21,7 +21,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class ForkDefinition extends SendDefinition<ForkDefinition> {
   @XmlAttribute
-  private ExchangePattern pattern;
+  protected ExchangePattern pattern;
 
   public ForkDefinition() {
   }

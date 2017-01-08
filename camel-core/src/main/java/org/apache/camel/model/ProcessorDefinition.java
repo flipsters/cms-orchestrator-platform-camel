@@ -22,6 +22,7 @@ import org.apache.camel.builder.ExpressionBuilder;
 import org.apache.camel.builder.ExpressionClause;
 import org.apache.camel.builder.ProcessorBuilder;
 import org.apache.camel.cms.orchestrator.definition.ForkDefinition;
+import org.apache.camel.cms.orchestrator.definition.JoinableForkDefinition;
 import org.apache.camel.model.language.ConstantExpression;
 import org.apache.camel.model.language.ExpressionDefinition;
 import org.apache.camel.model.language.LanguageExpression;
@@ -690,6 +691,165 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
     public Type fork(ExchangePattern pattern, Iterable<Endpoint> endpoints) {
         for (Endpoint endpoint : endpoints) {
             addOutput(new ForkDefinition(endpoint, pattern));
+        }
+        return (Type) this;
+    }
+
+
+    /**
+     * Sends the exchange to the given endpoint
+     *
+     * @param uri  the endpoint to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type joinableFork(String uri) {
+        addOutput(new JoinableForkDefinition(uri));
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange to the given endpoint
+     *
+     * @param uri  the String formatted endpoint uri to send to
+     * @param args arguments for the string formatting of the uri
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type joinableForkF(String uri, Object... args) {
+        addOutput(new JoinableForkDefinition(String.format(uri, args)));
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange to the given endpoint
+     *
+     * @param endpoint  the endpoint to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type joinableFork(Endpoint endpoint) {
+        addOutput(new JoinableForkDefinition(endpoint));
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange with certain exchange pattern to the given endpoint
+     * <p/>
+     * Notice the existing MEP is preserved
+     *
+     * @param pattern the pattern to use for the message exchange
+     * @param uri  the endpoint to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type joinableFork(ExchangePattern pattern, String uri) {
+        addOutput(new JoinableForkDefinition(uri, pattern));
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange with certain exchange pattern to the given endpoint
+     * <p/>
+     * Notice the existing MEP is preserved
+     *
+     * @param pattern the pattern to use for the message exchange
+     * @param endpoint  the endpoint to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type joinableFork(ExchangePattern pattern, Endpoint endpoint) {
+        addOutput(new JoinableForkDefinition(endpoint, pattern));
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange to a list of endpoints
+     *
+     * @param uris  list of endpoints to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type joinableFork(String... uris) {
+        for (String uri : uris) {
+            addOutput(new JoinableForkDefinition(uri));
+        }
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange to a list of endpoints
+     *
+     * @param endpoints  list of endpoints to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type joinableFork(Endpoint... endpoints) {
+        for (Endpoint endpoint : endpoints) {
+            addOutput(new JoinableForkDefinition(endpoint));
+        }
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange to a list of endpoints
+     *
+     * @param endpoints  list of endpoints to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type joinableFork(Iterable<Endpoint> endpoints) {
+        for (Endpoint endpoint : endpoints) {
+            addOutput(new JoinableForkDefinition(endpoint));
+        }
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange to a list of endpoints
+     * <p/>
+     * Notice the existing MEP is preserved
+     *
+     * @param pattern the pattern to use for the message exchanges
+     * @param uris  list of endpoints to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type joinableFork(ExchangePattern pattern, String... uris) {
+        for (String uri : uris) {
+            addOutput(new JoinableForkDefinition(uri, pattern));
+        }
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange to a list of endpoints
+     * <p/>
+     * Notice the existing MEP is preserved
+     *
+     * @param pattern the pattern to use for the message exchanges
+     * @param endpoints  list of endpoints to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type joinableFork(ExchangePattern pattern, Endpoint... endpoints) {
+        for (Endpoint endpoint : endpoints) {
+            addOutput(new JoinableForkDefinition(endpoint, pattern));
+        }
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange to a list of endpoints
+     *
+     * @param pattern the pattern to use for the message exchanges
+     * @param endpoints  list of endpoints to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type joinableFork(ExchangePattern pattern, Iterable<Endpoint> endpoints) {
+        for (Endpoint endpoint : endpoints) {
+            addOutput(new JoinableForkDefinition(endpoint, pattern));
         }
         return (Type) this;
     }

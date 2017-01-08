@@ -6,6 +6,8 @@ import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.cms.orchestrator.OrchestratorConstants;
 import org.apache.camel.cms.orchestrator.definition.ForkDefinition;
+import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
+import org.apache.camel.cms.orchestrator.utils.PlatformUtils;
 import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.processor.DelegateAsyncProcessor;
 import org.apache.camel.spi.InterceptStrategy;
@@ -15,7 +17,11 @@ import org.apache.camel.spi.InterceptStrategy;
  */
 public class ForkInterceptor implements InterceptStrategy {
 
-  AggregateStore store;
+  private AggregateStore aggregateStore;
+
+  public ForkInterceptor() {
+    aggregateStore = AggregateStoreFactory.getStoreInstance();
+  }
 
   @Override
   public Processor wrapProcessorInInterceptors(CamelContext context, ProcessorDefinition<?> definition,
@@ -26,10 +32,10 @@ public class ForkInterceptor implements InterceptStrategy {
         public void process(Exchange exchange) throws Exception {
           if (exchange.getProperty(OrchestratorConstants.FORK_PROPERTY_NAME) == null) {
             String routeId = exchange.getFromRouteId();
-            String requestId = exchange.getIn().getHeader(OrchestratorConstants.REQUEST_ID_HEADER, String.class);// get parent id
-            String parentId = exchange.getIn().getHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER, String.class);
-            store.clear(parentId, routeId);
-            store.fork(parentId, requestId, routeId);
+            String requestId = PlatformUtils.getRequestId(exchange);
+            String parentId = PlatformUtils.getParentRequestId(exchange);
+            aggregateStore.clear(parentId, routeId);
+            aggregateStore.fork(parentId, requestId, routeId);
           }
           target.process(exchange);
         }

@@ -32,7 +32,7 @@ public class ForkUtils {
 
     public static void createChild(Exchange exchange) throws NoRequestIdPresentException {
         String childId = UUID.randomUUID().toString();
-        String requestId = exchange.getIn().getHeader(OrchestratorConstants.REQUEST_ID_HEADER, String.class);
+        String requestId = PlatformUtils.getRequestId(exchange);
         Stack<String> parentHierarchy = exchange.getIn()
                 .getHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER, Stack.class);
 
@@ -51,7 +51,7 @@ public class ForkUtils {
 
     public static void storeForkState(Exchange exchange) throws NoRequestIdPresentException, IOException {
         Stack<String> parentHierarchy = exchange.getIn().getHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER, Stack.class);
-        String childId = exchange.getIn().getHeader(OrchestratorConstants.REQUEST_ID_HEADER, String.class);
+        String childId = PlatformUtils.getRequestId(exchange);
 
         if(CollectionUtils.isEmpty(parentHierarchy)) {
             throw new NoRequestIdPresentException("No parent id present in child process!");

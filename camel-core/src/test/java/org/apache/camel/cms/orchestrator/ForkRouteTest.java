@@ -5,6 +5,7 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.cms.orchestrator.utils.PlatformUtils;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.main.Main;
 
@@ -46,8 +47,8 @@ public class ForkRouteTest extends TestCase {
                         public void process(Exchange exchange) throws Exception {
                             exchange.getIn().setHeader(OrchestratorConstants.REQUEST_ID_HEADER, "rid1");
                             System.out.println("PARENT BEFORE FORK");
-                            System.out.println(exchange.getIn().getHeader(OrchestratorConstants.REQUEST_ID_HEADER));
-                            System.out.println(exchange.getIn().getHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER));
+                            System.out.println(PlatformUtils.getRequestId(exchange));
+                            System.out.println(PlatformUtils.getParentRequestId(exchange));
                         }
                     })
                     .fork("direct:childProcess")
@@ -55,8 +56,8 @@ public class ForkRouteTest extends TestCase {
                         @Override
                         public void process(Exchange exchange) throws Exception {
                             System.out.println("PARENT AFTER FORK");
-                            System.out.println(exchange.getIn().getHeader(OrchestratorConstants.REQUEST_ID_HEADER));
-                            System.out.println(exchange.getIn().getHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER));
+                            System.out.println(PlatformUtils.getRequestId(exchange));
+                            System.out.println(PlatformUtils.getParentRequestId(exchange));
                         }
                     })
                     .to("mock:results");
@@ -66,8 +67,8 @@ public class ForkRouteTest extends TestCase {
                         @Override
                         public void process(Exchange exchange) throws Exception {
                             System.out.println("CHILD1 BEFORE FORK");
-                            System.out.println(exchange.getIn().getHeader(OrchestratorConstants.REQUEST_ID_HEADER));
-                            System.out.println(exchange.getIn().getHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER));
+                            System.out.println(PlatformUtils.getRequestId(exchange));
+                            System.out.println(PlatformUtils.getParentRequestId(exchange));
                         }
                     })
                     .fork("direct:childProcess2")
@@ -75,8 +76,8 @@ public class ForkRouteTest extends TestCase {
                         @Override
                         public void process(Exchange exchange) throws Exception {
                             System.out.println("CHILD1 AFTER FORK");
-                            System.out.println(exchange.getIn().getHeader(OrchestratorConstants.REQUEST_ID_HEADER));
-                            System.out.println(exchange.getIn().getHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER));
+                            System.out.println(PlatformUtils.getRequestId(exchange));
+                            System.out.println(PlatformUtils.getParentRequestId(exchange));
                         }
                     });
 
@@ -85,8 +86,8 @@ public class ForkRouteTest extends TestCase {
                         @Override
                         public void process(Exchange exchange) throws Exception {
                             System.out.println("CHILD2 ::");
-                            System.out.println(exchange.getIn().getHeader(OrchestratorConstants.REQUEST_ID_HEADER));
-                            System.out.println(exchange.getIn().getHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER));
+                            System.out.println(PlatformUtils.getRequestId(exchange));
+                            System.out.println(PlatformUtils.getParentRequestId(exchange));
                         }
                     });
         }

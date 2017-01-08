@@ -16,40 +16,12 @@
  */
 package org.apache.camel.model;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAnyAttribute;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.namespace.QName;
-
-import org.apache.camel.Channel;
-import org.apache.camel.Endpoint;
-import org.apache.camel.ErrorHandlerFactory;
-import org.apache.camel.Exchange;
-import org.apache.camel.ExchangePattern;
-import org.apache.camel.Expression;
-import org.apache.camel.LoggingLevel;
-import org.apache.camel.Predicate;
-import org.apache.camel.Processor;
-import org.apache.camel.Route;
+import org.apache.camel.*;
 import org.apache.camel.builder.DataFormatClause;
 import org.apache.camel.builder.ExpressionBuilder;
 import org.apache.camel.builder.ExpressionClause;
 import org.apache.camel.builder.ProcessorBuilder;
-import org.apache.camel.cms.orchestrator.ForkDefinition;
+import org.apache.camel.cms.orchestrator.definition.ForkDefinition;
 import org.apache.camel.model.language.ConstantExpression;
 import org.apache.camel.model.language.ExpressionDefinition;
 import org.apache.camel.model.language.LanguageExpression;
@@ -62,14 +34,16 @@ import org.apache.camel.processor.interceptor.Delayer;
 import org.apache.camel.processor.interceptor.HandleFault;
 import org.apache.camel.processor.interceptor.StreamCaching;
 import org.apache.camel.processor.loadbalancer.LoadBalancer;
-import org.apache.camel.spi.DataFormat;
-import org.apache.camel.spi.IdempotentRepository;
-import org.apache.camel.spi.InterceptStrategy;
-import org.apache.camel.spi.LifecycleStrategy;
-import org.apache.camel.spi.Policy;
-import org.apache.camel.spi.RouteContext;
+import org.apache.camel.spi.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.xml.bind.annotation.*;
+import javax.xml.namespace.QName;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Base class for processor types that most XML types extend.
@@ -569,11 +543,169 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
      * @return the builder
      */
     @SuppressWarnings("unchecked")
+    public Type fork(String uri) {
+        addOutput(new ForkDefinition(uri));
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange to the given endpoint
+     *
+     * @param uri  the String formatted endpoint uri to send to
+     * @param args arguments for the string formatting of the uri
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type forkF(String uri, Object... args) {
+        addOutput(new ForkDefinition(String.format(uri, args)));
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange to the given endpoint
+     *
+     * @param endpoint  the endpoint to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type fork(Endpoint endpoint) {
+        addOutput(new ForkDefinition(endpoint));
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange with certain exchange pattern to the given endpoint
+     * <p/>
+     * Notice the existing MEP is preserved
+     *
+     * @param pattern the pattern to use for the message exchange
+     * @param uri  the endpoint to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type fork(ExchangePattern pattern, String uri) {
+        addOutput(new ForkDefinition(uri, pattern));
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange with certain exchange pattern to the given endpoint
+     * <p/>
+     * Notice the existing MEP is preserved
+     *
+     * @param pattern the pattern to use for the message exchange
+     * @param endpoint  the endpoint to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type fork(ExchangePattern pattern, Endpoint endpoint) {
+        addOutput(new ForkDefinition(endpoint, pattern));
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange to a list of endpoints
+     *
+     * @param uris  list of endpoints to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type fork(String... uris) {
+        for (String uri : uris) {
+            addOutput(new ForkDefinition(uri));
+        }
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange to a list of endpoints
+     *
+     * @param endpoints  list of endpoints to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type fork(Endpoint... endpoints) {
+        for (Endpoint endpoint : endpoints) {
+            addOutput(new ForkDefinition(endpoint));
+        }
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange to a list of endpoints
+     *
+     * @param endpoints  list of endpoints to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type fork(Iterable<Endpoint> endpoints) {
+        for (Endpoint endpoint : endpoints) {
+            addOutput(new ForkDefinition(endpoint));
+        }
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange to a list of endpoints
+     * <p/>
+     * Notice the existing MEP is preserved
+     *
+     * @param pattern the pattern to use for the message exchanges
+     * @param uris  list of endpoints to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type fork(ExchangePattern pattern, String... uris) {
+        for (String uri : uris) {
+            addOutput(new ForkDefinition(uri, pattern));
+        }
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange to a list of endpoints
+     * <p/>
+     * Notice the existing MEP is preserved
+     *
+     * @param pattern the pattern to use for the message exchanges
+     * @param endpoints  list of endpoints to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type fork(ExchangePattern pattern, Endpoint... endpoints) {
+        for (Endpoint endpoint : endpoints) {
+            addOutput(new ForkDefinition(endpoint, pattern));
+        }
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange to a list of endpoints
+     *
+     * @param pattern the pattern to use for the message exchanges
+     * @param endpoints  list of endpoints to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type fork(ExchangePattern pattern, Iterable<Endpoint> endpoints) {
+        for (Endpoint endpoint : endpoints) {
+            addOutput(new ForkDefinition(endpoint, pattern));
+        }
+        return (Type) this;
+    }
+
+    /**
+     * Sends the exchange to the given endpoint
+     *
+     * @param uri  the endpoint to send to
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
     public Type to(String uri) {
         addOutput(new ToDefinition(uri));
         return (Type) this;
-    }   
-    
+    }
+
     /**
      * Sends the exchange to the given endpoint
      *
@@ -598,7 +730,7 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
         addOutput(new ToDefinition(endpoint));
         return (Type) this;
     }
-    
+
     /**
      * Sends the exchange with certain exchange pattern to the given endpoint
      * <p/>
@@ -612,7 +744,7 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
     public Type to(ExchangePattern pattern, String uri) {
         addOutput(new ToDefinition(uri, pattern));
         return (Type) this;
-    }   
+    }
 
     /**
      * Sends the exchange with certain exchange pattern to the given endpoint
@@ -717,18 +849,6 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
         for (Endpoint endpoint : endpoints) {
             addOutput(new ToDefinition(endpoint, pattern));
         }
-        return (Type) this;
-    }
-
-    /**
-     * Sends the exchange to the given endpoint
-     *
-     * @param uri  the endpoint to send to
-     * @return the builder
-     */
-    @SuppressWarnings("unchecked")
-    public Type fork(String uri) {
-        addOutput(new ForkDefinition(uri));
         return (Type) this;
     }
 

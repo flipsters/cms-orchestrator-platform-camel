@@ -30,18 +30,15 @@ public class StatusProcessor extends ServiceSupport implements AsyncProcessor, T
     @Override
     public boolean process(Exchange exchange, AsyncCallback callback) {
         try {
-            String msg = expression.evaluate(exchange, String.class);
+            String message = expression.evaluate(exchange, String.class);
             String requestId = PlatformUtils.getRequestId(exchange);
             String parentRequestId = PlatformUtils.getParentRequestId(exchange);
-            Status.StatusBuilder statusBuilder = Status.builder()
-                    .state(msg)
-                    .requestId(requestId);
-            if(StringUtils.isNotEmpty(parentRequestId)) {
+            Status.StatusBuilder statusBuilder = Status.builder().state(message).requestId(requestId);
+            if (StringUtils.isNotEmpty(parentRequestId)) {
                 statusBuilder = statusBuilder.parentId(parentRequestId);
             }
             Status status = statusBuilder.build();
-
-            if(!statusStoreService.putStatus(status)) {
+            if (!statusStoreService.putStatus(status)) {
                 throw new StatusStoreException("Error persisting to status store");
             }
         } catch (Exception e) {

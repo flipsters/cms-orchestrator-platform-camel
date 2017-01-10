@@ -75,7 +75,8 @@ public class ForkRouteTest extends TestCase {
                     .process(new Processor() {
                         @Override
                         public void process(Exchange exchange) throws Exception {
-                            System.out.println("CHILD1 AFTER FORK");
+                            Thread.sleep(10000);
+                            System.out.println("CHILD1 AFTER FORK ======================= " + exchange.getIn().getHeader("xxx"));
                             System.out.println(PlatformUtils.getRequestId(exchange));
                             System.out.println(PlatformUtils.getParentRequestId(exchange));
                         }
@@ -86,6 +87,7 @@ public class ForkRouteTest extends TestCase {
                         @Override
                         public void process(Exchange exchange) throws Exception {
                             System.out.println("CHILD2 ::");
+                            exchange.getIn().setHeader("xxx", "yyy");
                             System.out.println(PlatformUtils.getRequestId(exchange));
                             System.out.println(PlatformUtils.getParentRequestId(exchange));
                         }

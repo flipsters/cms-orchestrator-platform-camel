@@ -40,7 +40,7 @@ public class ForkProcessor extends SendProcessor {
             boolean status = super.process(exchange, callback);
             ForkUtils.revertBackToParent(exchange);
             return status;
-        } catch (NoRequestIdPresentException e) {
+        } catch (Exception e) {
             exchange.setException(e);
             callback.done(true);
             return true;

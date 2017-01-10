@@ -3,12 +3,9 @@ package org.apache.camel.cms.orchestrator.utils;
 import org.apache.camel.Exchange;
 import org.apache.camel.cms.orchestrator.OrchestratorConstants;
 import org.apache.camel.cms.orchestrator.exception.NoRequestIdPresentException;
-import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
-import java.io.IOException;
-import java.util.Stack;
+import java.util.Arrays;
 import java.util.UUID;
 
 /**
@@ -16,48 +13,65 @@ import java.util.UUID;
  */
 public class ForkUtils {
 
-    public static void revertBackToParent(Exchange exchange) throws NoRequestIdPresentException {
-        Stack<String> parentHierarchy = exchange.getIn()
-                .getHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER, Stack.class);
+    private static final String ROUTE_ID_NOT_DEFINED = "ROUTE_ID_NOT_DEFINED";
 
-        if(CollectionUtils.isEmpty(parentHierarchy)) {
-            throw new NoRequestIdPresentException("Request Id absent!");
+    public static String getRequestId(Exchange exchange) {
+        return exchange.getIn().getHeader(OrchestratorConstants.REQUEST_ID_HEADER, String.class);
+    }
+
+    private static String[] getParentRequestIdStack(Exchange exchange) {
+        String parentIdStack = exchange.getIn().getHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER, String.class);
+        if (StringUtils.isEmpty(parentIdStack)) {
+            return null;
         }
+        return parentIdStack.split(OrchestratorConstants.PARENT_REQUEST_ID_DELIM);
+    }
 
-        String requestId = parentHierarchy.pop();
+    public static String getParentRequestId(Exchange exchange) {
+        String[] parentRequestIdStack = getParentRequestIdStack(exchange);
+        return (parentRequestIdStack == null) ? null : parentRequestIdStack[0];
+    }
 
+    public static void revertBackToParent(Exchange exchange) throws NoRequestIdPresentException {
+        String[] parentRequestIdStack = getParentRequestIdStack(exchange);
+        if (parentRequestIdStack == null) {
+            throw new NoRequestIdPresentException("Parent request ID absent!");
+        }
+        String requestId = parentRequestIdStack[0];
         exchange.getIn().setHeader(OrchestratorConstants.REQUEST_ID_HEADER, requestId);
-        exchange.getIn().setHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER, parentHierarchy);
+        String parentRequestIdStackStr = null;
+        if (parentRequestIdStack.length > 1) {
+            parentRequestIdStack = Arrays.copyOfRange(parentRequestIdStack, 1, parentRequestIdStack.length);
+            parentRequestIdStackStr = StringUtils.join(parentRequestIdStack, OrchestratorConstants.PARENT_REQUEST_ID_DELIM);
+        }
+        exchange.getIn().setHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER, parentRequestIdStackStr);
     }
 
     public static void createChild(Exchange exchange) throws NoRequestIdPresentException {
+        // TODO: Move this to ID generator
         String childId = UUID.randomUUID().toString();
-        String requestId = PlatformUtils.getRequestId(exchange);
-        Stack<String> parentHierarchy = exchange.getIn()
-                .getHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER, Stack.class);
 
-        if(StringUtils.isEmpty(requestId)) {
-            throw new NoRequestIdPresentException("Request Id absent!");
+        String requestId = getRequestId(exchange);
+        if (StringUtils.isEmpty(requestId)) {
+            throw new NoRequestIdPresentException("Request ID absent!");
         }
-
-        if(CollectionUtils.isEmpty(parentHierarchy)) {
-            parentHierarchy = new Stack<>();
+        String parentIdStack = exchange.getIn().getHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER, String.class);
+        if (StringUtils.isEmpty(parentIdStack)) {
+            parentIdStack = requestId;
+        } else {
+            parentIdStack = requestId + OrchestratorConstants.PARENT_REQUEST_ID_DELIM + parentIdStack;
         }
-        parentHierarchy.push(requestId);
-
-        exchange.getIn().setHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER, parentHierarchy);
+        exchange.getIn().setHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER, parentIdStack);
         exchange.getIn().setHeader(OrchestratorConstants.REQUEST_ID_HEADER, childId);
     }
 
-    public static void storeForkState(Exchange exchange) throws NoRequestIdPresentException, IOException {
-        Stack<String> parentHierarchy = exchange.getIn().getHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER, Stack.class);
-        String childId = PlatformUtils.getRequestId(exchange);
-
-        if(CollectionUtils.isEmpty(parentHierarchy)) {
-            throw new NoRequestIdPresentException("No parent id present in child process!");
+    public static String getRouteId(Exchange exchange) {
+        String routeId = ROUTE_ID_NOT_DEFINED;
+        try {
+            routeId = exchange.getUnitOfWork().getRouteContext().getRoute().getId();
+        } catch (NullPointerException e) {
+            // Ignore
         }
-        String parentId = parentHierarchy.peek();
-
-        AggregateStoreFactory.getStoreInstance().fork(parentId, childId, exchange.getFromRouteId());
+        return routeId;
     }
 }

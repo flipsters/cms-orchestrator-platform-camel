@@ -10,6 +10,8 @@ import org.apache.camel.cms.orchestrator.utils.ForkUtils;
 import org.apache.camel.cms.orchestrator.exception.NoRequestIdPresentException;
 import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
 import org.apache.camel.processor.SendProcessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -18,6 +20,8 @@ import java.io.IOException;
  */
 public class JoinableForkProcessor extends SendProcessor {
 
+    private static final Logger LOG = LoggerFactory.getLogger(JoinableForkProcessor.class);
+
     protected AggregateStore aggregateStore;
 
     public JoinableForkProcessor(Endpoint destination) {
@@ -25,7 +29,7 @@ public class JoinableForkProcessor extends SendProcessor {
         aggregateStore = AggregateStoreFactory.getStoreInstance();
     }
 
-    public JoinableForkProcessor(Endpoint destination, ExchangePattern pattern){
+    public JoinableForkProcessor(Endpoint destination, ExchangePattern pattern) {
         super(destination, pattern);
         aggregateStore = AggregateStoreFactory.getStoreInstance();
     }
@@ -38,7 +42,7 @@ public class JoinableForkProcessor extends SendProcessor {
     private void preProcess(Exchange exchange) throws IOException, NoRequestIdPresentException {
         String routeId = ForkUtils.getRouteId(exchange);
         if (exchange.getProperty(OrchestratorConstants.IS_FIRST_FORK_PROPERTY) == null) {
-            aggregateStore.clear(routeId, ForkUtils.getRequestId(exchange));
+            aggregateStore.clear(ForkUtils.getRequestId(exchange), routeId);
             exchange.setProperty(OrchestratorConstants.IS_FIRST_FORK_PROPERTY, true);
         }
         ForkUtils.createChild(exchange);
@@ -64,6 +68,7 @@ public class JoinableForkProcessor extends SendProcessor {
             postProcess(exchange);
             return status;
         } catch (Exception e) {
+            LOG.error("Failed to do joinable fork for " + exchange.getIn().getHeaders(), e);
             exchange.setException(e);
             callback.done(true);
             return true;

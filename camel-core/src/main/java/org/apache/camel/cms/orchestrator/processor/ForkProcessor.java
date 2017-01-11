@@ -7,11 +7,15 @@ import org.apache.camel.ExchangePattern;
 import org.apache.camel.cms.orchestrator.utils.ForkUtils;
 import org.apache.camel.cms.orchestrator.exception.NoRequestIdPresentException;
 import org.apache.camel.processor.SendProcessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by achit.ojha on 08/01/17.
  */
 public class ForkProcessor extends SendProcessor {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ForkProcessor.class);
 
     public ForkProcessor(Endpoint destination) {
         super(destination);
@@ -41,6 +45,7 @@ public class ForkProcessor extends SendProcessor {
             ForkUtils.revertBackToParent(exchange);
             return status;
         } catch (Exception e) {
+            LOG.error("Failed to do fork for " + exchange.getIn().getHeaders(), e);
             exchange.setException(e);
             callback.done(true);
             return true;

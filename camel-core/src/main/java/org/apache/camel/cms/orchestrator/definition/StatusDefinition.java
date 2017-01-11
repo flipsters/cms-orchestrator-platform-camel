@@ -41,7 +41,7 @@ public class StatusDefinition extends NoOutputDefinition<StatusDefinition> {
 
     @Override
     public String getLabel() {
-        return "status";
+        return toString();
     }
 
     @Override

@@ -6,14 +6,19 @@ import org.apache.camel.*;
 import org.apache.camel.cms.orchestrator.exception.StatusStoreException;
 import org.apache.camel.cms.orchestrator.factory.StatusStoreFactory;
 import org.apache.camel.cms.orchestrator.utils.PlatformUtils;
+import org.apache.camel.processor.SendProcessor;
 import org.apache.camel.support.ServiceSupport;
 import org.apache.camel.util.AsyncProcessorHelper;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by achit.ojha on 08/01/17.
  */
 public class StatusProcessor extends ServiceSupport implements AsyncProcessor, Traceable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(StatusProcessor.class);
 
     private final Expression expression;
     private final StatusStoreService statusStoreService;
@@ -42,6 +47,7 @@ public class StatusProcessor extends ServiceSupport implements AsyncProcessor, T
                 throw new StatusStoreException("Error persisting to status store");
             }
         } catch (Exception e) {
+            LOG.error("Failed to push status for " + exchange.getIn().getHeaders(), e);
             exchange.setException(e);
         } finally {
             // callback must be invoked

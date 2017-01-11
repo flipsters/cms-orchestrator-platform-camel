@@ -21,10 +21,7 @@ import org.apache.camel.builder.DataFormatClause;
 import org.apache.camel.builder.ExpressionBuilder;
 import org.apache.camel.builder.ExpressionClause;
 import org.apache.camel.builder.ProcessorBuilder;
-import org.apache.camel.cms.orchestrator.definition.AuditDefinition;
-import org.apache.camel.cms.orchestrator.definition.ForkDefinition;
-import org.apache.camel.cms.orchestrator.definition.JoinableForkDefinition;
-import org.apache.camel.cms.orchestrator.definition.StatusDefinition;
+import org.apache.camel.cms.orchestrator.definition.*;
 import org.apache.camel.model.language.ConstantExpression;
 import org.apache.camel.model.language.ExpressionDefinition;
 import org.apache.camel.model.language.LanguageExpression;
@@ -559,7 +556,7 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
      * @return the builder
      */
     @SuppressWarnings("unchecked")
-    public Type forkF(String uri, Object... args) {
+    public Type fork(String uri, Object... args) {
         addOutput(new ForkDefinition(String.format(uri, args)));
         return (Type) this;
     }
@@ -1725,6 +1722,61 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
         LoadBalanceDefinition answer = new LoadBalanceDefinition();
         addOutput(answer);
         return answer.loadBalance(loadBalancer);
+    }
+
+    /**
+     * Performs join, against the existing request & parent request id.
+     *
+     * @param aggregatorId the aggregator ID, (you can use {@link org.apache.camel.language.simple.SimpleLanguage} syntax)
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type join(String aggregatorId) {
+        JoinDefinition answer = new JoinDefinition(aggregatorId);
+        addOutput(answer);
+        return (Type) this;
+    }
+
+    /**
+     * Performs join, against the existing request id & parent request id.
+     *
+     * @param pattern the exchange pattern
+     * @param aggregatorId the aggregator ID, (you can use {@link org.apache.camel.language.simple.SimpleLanguage} syntax)
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type waitForChildren(ExchangePattern pattern, String aggregatorId, String endpoint) {
+        WaitForChildrenDefinition answer = new WaitForChildrenDefinition(aggregatorId, endpoint, pattern);
+        addOutput(answer);
+        return (Type) this;
+    }
+
+    /**
+     * Performs join, against the existing request & parent request id.
+     *
+     * @param aggregatorId the aggregator ID, (you can use {@link org.apache.camel.language.simple.SimpleLanguage} syntax)
+     * @param endpoint Endpoint to which callback must be invoked
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type waitForChildren(String aggregatorId, String endpoint) {
+        WaitForChildrenDefinition answer = new WaitForChildrenDefinition(aggregatorId, endpoint);
+        addOutput(answer);
+        return (Type) this;
+    }
+
+    /**
+     * Performs join, against the existing request id & parent request id.
+     *
+     * @param pattern the exchange pattern
+     * @param aggregatorId the aggregator ID, (you can use {@link org.apache.camel.language.simple.SimpleLanguage} syntax)
+     * @return the builder
+     */
+    @SuppressWarnings("unchecked")
+    public Type join(ExchangePattern pattern, String aggregatorId) {
+        JoinDefinition answer = new JoinDefinition(aggregatorId, pattern);
+        addOutput(answer);
+        return (Type) this;
     }
 
     /**

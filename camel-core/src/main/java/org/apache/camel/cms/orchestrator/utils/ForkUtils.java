@@ -65,6 +65,7 @@ public class ForkUtils {
         exchange.getIn().setHeader(OrchestratorConstants.REQUEST_ID_HEADER, childId);
     }
 
+    // TODO: Ensure that client sets uniq route ID, we cannot rely on camel generated route ID
     public static String getRouteId(Exchange exchange) {
         String routeId = ROUTE_ID_NOT_DEFINED;
         try {

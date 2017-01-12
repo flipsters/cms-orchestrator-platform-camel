@@ -556,7 +556,7 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
      * @return the builder
      */
     @SuppressWarnings("unchecked")
-    public Type fork(String uri, Object... args) {
+    public Type forkF(String uri, Object... args) {
         addOutput(new ForkDefinition(String.format(uri, args)));
         return (Type) this;
     }

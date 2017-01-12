@@ -170,7 +170,6 @@ public class JoinableForkJoinRouteTest extends TestCase {
                     });
 
             from("direct:2start")
-                    .routeId("route-id-1")
                     .joinableFork("direct:2childProcess1")
                     .joinableFork("direct:2childProcess2")
                     .to("mock:results");

@@ -59,11 +59,11 @@
             <optional>true</optional>
         </dependency>
 
-        <dependency>
+        <!--dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-netty4</artifactId>
             <optional>true</optional>
-        </dependency>
+        </dependency-->
 
         <!-- testing -->
         <dependency>

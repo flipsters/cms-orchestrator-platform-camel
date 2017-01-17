@@ -27,30 +27,9 @@ public class Payload implements Serializable {
     }
   }
 
-  byte[] body;
+  private byte[] body;
 
-  Map<String, Object> headers;
-
-  public byte[] getBytes() throws IOException {
-    byte[] bytes = null;
-    ByteArrayOutputStream bos = null;
-    ObjectOutputStream oos = null;
-    try {
-      bos = new ByteArrayOutputStream();
-      oos = new ObjectOutputStream(bos);
-      oos.writeObject(this);
-      oos.flush();
-      bytes = bos.toByteArray();
-    } finally {
-      if (oos != null) {
-        oos.close();
-      }
-      if (bos != null) {
-        bos.close();
-      }
-    }
-    return bytes;
-  }
+  private Map<String, Object> headers;
 
   private boolean getValidPayloadHeaderValue(Object headerValue) {
     if (headerValue instanceof String) {

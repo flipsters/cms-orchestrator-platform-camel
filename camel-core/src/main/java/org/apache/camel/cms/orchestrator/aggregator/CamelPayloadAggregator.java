@@ -2,6 +2,8 @@ package org.apache.camel.cms.orchestrator.aggregator;
 
 import flipkart.cms.aggregator.client.Aggregator;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.cms.orchestrator.utils.ByteUtils;
 
 import java.io.*;
 import java.util.Arrays;
@@ -10,9 +12,10 @@ import java.util.Arrays;
  * Created by pawas.kumar on 16/01/17.
  */
 @AllArgsConstructor
+@Slf4j
 public class CamelPayloadAggregator implements Aggregator {
 
-  PayloadAggregator aggregator;
+  private PayloadAggregator aggregator;
 
   @Override
   public byte[] aggregate(byte[] existing, byte[] incremental) {
@@ -21,9 +24,10 @@ public class CamelPayloadAggregator implements Aggregator {
       existingPayload = getPayload(existing);
       incrementalPayload = getPayload(incremental);
       Payload aggregate = aggregator.aggregate(existingPayload, incrementalPayload);
-      return aggregate.getBytes();
+      return ByteUtils.getBytes(aggregate);
     } catch (IOException | ClassNotFoundException e) {
-      throw new RuntimeException("Not able to deserialize bytes : " + Arrays.toString(existing) + " and " + Arrays.toString(incremental));
+      log.error("Not able to deserialize the byte array!!");
+      throw new RuntimeException("Not able to deserialize bytes");
     }
   }
 

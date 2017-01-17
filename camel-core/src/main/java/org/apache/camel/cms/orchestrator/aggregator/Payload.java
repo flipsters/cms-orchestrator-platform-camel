@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Map;
@@ -12,7 +13,7 @@ import java.util.Map;
 /**
  * Created by pawas.kumar on 16/01/17.
  */
-public class Payload {
+public class Payload implements Serializable {
 
   public Payload(byte[] body, Map<String, Object> headers) {
     this.body = body;

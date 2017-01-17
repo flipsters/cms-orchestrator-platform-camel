@@ -58,10 +58,12 @@ public class ForkRouteTest extends TestCase {
                         public void process(Exchange exchange) throws Exception {
                             assertEquals(rid0, PlatformUtils.getParentRequestId(exchange));
                             assertEquals(rid1, PlatformUtils.getRequestId(exchange));
+                            exchange.getIn().setHeader("XYZ-0", 0);
                         }
                     })
                     .fork("direct:childProcess")
-                    .fork("direct:childProcess2")
+                    .setHeader("X-Test", simple("direct:childProcess2"))
+                    .fork(header("X-Test"))
                     .process(new Processor() {
                         @Override
                         public void process(Exchange exchange) throws Exception {
@@ -79,6 +81,7 @@ public class ForkRouteTest extends TestCase {
                             rid2 = PlatformUtils.getRequestId(exchange);
                             assertNotNull(rid2);
                             assertEquals(rid1, PlatformUtils.getParentRequestId(exchange));
+                            assertEquals(0, exchange.getIn().getHeader("XYZ-0"));
                         }
                     });
 

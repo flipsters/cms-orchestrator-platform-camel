@@ -86,6 +86,7 @@ public class JoinableForkJoinRouteTest extends TestCase {
                         public void process(Exchange exchange) throws Exception {
                             assertEquals(rid0, PlatformUtils.getParentRequestId(exchange));
                             assertEquals(rid1, PlatformUtils.getRequestId(exchange));
+                            exchange.getIn().setHeader("XYZ-0", 0);
                         }
                     })
                     .joinableFork("direct:childProcess")
@@ -114,6 +115,7 @@ public class JoinableForkJoinRouteTest extends TestCase {
                             rid2 = PlatformUtils.getRequestId(exchange);
                             assertNotNull(rid2);
                             assertEquals(rid1, PlatformUtils.getParentRequestId(exchange));
+                            assertEquals(0, exchange.getIn().getHeader("XYZ-0"));
                         }
                     })
                     .joinableFork("direct:childProcess3")
@@ -134,6 +136,7 @@ public class JoinableForkJoinRouteTest extends TestCase {
                             rid3 = PlatformUtils.getRequestId(exchange);
                             assertNotNull(rid3);
                             assertEquals(rid1, PlatformUtils.getParentRequestId(exchange));
+                            assertEquals(0, exchange.getIn().getHeader("XYZ-0"));
                         }
                     })
                     .join("xyzAggregatorId");
@@ -171,7 +174,8 @@ public class JoinableForkJoinRouteTest extends TestCase {
 
             from("direct:2start")
                     .joinableFork("direct:2childProcess1")
-                    .joinableFork("direct:2childProcess2")
+                    .setHeader("X-Next", simple("direct:2childProcess2"))
+                    .joinableFork(header("X-Next"))
                     .to("mock:results");
 
             from("direct:2childProcess1")

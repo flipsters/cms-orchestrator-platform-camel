@@ -2,6 +2,7 @@ package org.apache.camel.cms.orchestrator.processor;
 
 import flipkart.cms.aggregator.client.AggregateStore;
 import org.apache.camel.*;
+import org.apache.camel.cms.orchestrator.aggregator.Payload;
 import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
 import org.apache.camel.cms.orchestrator.utils.PlatformUtils;
 import org.apache.camel.processor.SendProcessor;
@@ -42,8 +43,8 @@ public class WaitForChildrenProcessor extends SendProcessor {
         String requestId = PlatformUtils.getRequestId(exchange);
         String aggregatorId = aggregatorIdExpression.evaluate(exchange, String.class);
         String endpoint = endpointExpression.evaluate(exchange, String.class);
-        byte[] payload = exchange.getIn().getBody(byte[].class);
-        boolean isJoinable = aggregateStore.joinWithWait(requestId, endpoint, payload, aggregatorId);
+        Payload payload = new Payload(exchange.getIn().getBody(byte[].class), exchange.getIn().getHeaders());
+        boolean isJoinable = aggregateStore.joinWithWait(requestId, endpoint, payload.getBytes(), aggregatorId);
         if (isJoinable) {
             LOG.info("Parent request ID is now joinable " + requestId);
             exchange.getIn().setBody(requestId.getBytes());

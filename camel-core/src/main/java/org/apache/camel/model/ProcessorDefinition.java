@@ -1443,16 +1443,26 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
         return answer.loadBalance(loadBalancer);
     }
 
+
+    public WaitForChildrenDefinition<Type> waitForChildren(Expression aggregatorIdExpression, Expression callbackEndpointExpression) {
+        WaitForChildrenDefinition<Type> answer = new WaitForChildrenDefinition<Type>(aggregatorIdExpression, callbackEndpointExpression);
+        addOutput(answer);
+        return answer;
+    }
+
     public WaitForChildrenDefinition<Type> waitForChildren(String aggregatorId, String callbackEndpoint) {
-        WaitForChildrenDefinition<Type> answer = new WaitForChildrenDefinition<Type>(aggregatorId, callbackEndpoint);
+        return waitForChildren(simple(aggregatorId), simple(callbackEndpoint));
+    }
+
+
+    public JoinDefinition<Type> join(Expression aggregatorIdExpression) {
+        JoinDefinition<Type> answer = new JoinDefinition<Type>(aggregatorIdExpression);
         addOutput(answer);
         return answer;
     }
 
     public JoinDefinition<Type> join(String aggregatorId) {
-        JoinDefinition<Type> answer = new JoinDefinition<Type>(aggregatorId);
-        addOutput(answer);
-        return answer;
+        return join(simple(aggregatorId));
     }
 
     /**

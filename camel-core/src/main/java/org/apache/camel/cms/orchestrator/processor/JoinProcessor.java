@@ -19,15 +19,15 @@ public class JoinProcessor extends RecipientList {
 
     private static final Logger LOG = LoggerFactory.getLogger(JoinProcessor.class);
 
-    private String aggregatorId;
+    private Expression aggregatorIdExpression;
     private AggregateStore aggregateStore;
 
-    public JoinProcessor(CamelContext camelContext, Expression expression, String aggregatorId, ExecutorService threadPool,
+    public JoinProcessor(CamelContext camelContext, Expression expression, Expression aggregatorIdExpression, ExecutorService threadPool,
                                  boolean shutdownThreadPool, RecipientList recipientList) {
-        this(camelContext, expression, ",", aggregatorId, threadPool, shutdownThreadPool, recipientList);
+        this(camelContext, expression, ",", aggregatorIdExpression, threadPool, shutdownThreadPool, recipientList);
     }
 
-    public JoinProcessor(CamelContext camelContext, Expression expression, String delimiter, String aggregatorId,
+    public JoinProcessor(CamelContext camelContext, Expression expression, String delimiter, Expression aggregatorIdExpression,
                                  ExecutorService threadPool, boolean shutdownThreadPool, RecipientList recipientList) {
         super(camelContext, expression, delimiter);
         setAggregationStrategy(recipientList.getAggregationStrategy());
@@ -42,19 +42,20 @@ public class JoinProcessor extends RecipientList {
         setTimeout(recipientList.getTimeout());
         setExecutorService(threadPool);
         setShutdownExecutorService(shutdownThreadPool);
-        this.aggregatorId = aggregatorId;
+        this.aggregatorIdExpression = aggregatorIdExpression;
         aggregateStore = AggregateStoreFactory.getStoreInstance();
     }
 
     @Override
     public String toString() {
-        return "Join(" + aggregatorId + ", " + super.toString() + ")";
+        return "Join(" + aggregatorIdExpression + ", " + super.toString() + ")";
     }
 
     private boolean preProcess(Exchange exchange) throws Exception {
         String requestId = PlatformUtils.getRequestId(exchange);
         String parentRequestId = PlatformUtils.getParentRequestId(exchange);
         Payload payload = new Payload(exchange.getIn().getBody(byte[].class), exchange.getIn().getHeaders());
+        String aggregatorId = aggregatorIdExpression.evaluate(exchange, String.class);
         boolean isJoinable = aggregateStore.join(parentRequestId, requestId, ByteUtils.getBytes(payload), aggregatorId);
         if (isJoinable) {
             LOG.info("Parent request ID is now joinable " + parentRequestId);

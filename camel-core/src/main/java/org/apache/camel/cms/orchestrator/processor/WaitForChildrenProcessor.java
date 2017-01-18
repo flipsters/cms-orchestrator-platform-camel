@@ -6,7 +6,6 @@ import org.apache.camel.cms.orchestrator.aggregator.Payload;
 import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
 import org.apache.camel.cms.orchestrator.utils.ByteUtils;
 import org.apache.camel.cms.orchestrator.utils.PlatformUtils;
-import org.apache.camel.processor.*;
 import org.apache.camel.processor.RecipientList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,17 +19,17 @@ public class WaitForChildrenProcessor extends org.apache.camel.processor.Recipie
 
     private static final Logger LOG = LoggerFactory.getLogger(WaitForChildrenProcessor.class);
 
-    private String aggregatorId;
-    private String callbackEndpoint;
+    private Expression aggregatorIdExpression;
+    private Expression callbackEndpointExpression;
     private AggregateStore aggregateStore;
 
-    public WaitForChildrenProcessor(CamelContext camelContext, Expression expression, String aggregatorId, String callbackEndpoint,
+    public WaitForChildrenProcessor(CamelContext camelContext, Expression expression, Expression aggregatorIdExpression, Expression callbackEndpointExpression,
                                     ExecutorService threadPool, boolean shutdownThreadPool, RecipientList recipientList) {
-        this(camelContext, expression, ",", aggregatorId, callbackEndpoint, threadPool, shutdownThreadPool, recipientList);
+        this(camelContext, expression, ",", aggregatorIdExpression, callbackEndpointExpression, threadPool, shutdownThreadPool, recipientList);
     }
 
-    public WaitForChildrenProcessor(CamelContext camelContext, Expression expression, String delimiter, String aggregatorId,
-                                    String callbackEndpoint, ExecutorService threadPool, boolean shutdownThreadPool, RecipientList recipientList) {
+    public WaitForChildrenProcessor(CamelContext camelContext, Expression expression, String delimiter, Expression aggregatorIdExpression,
+                                    Expression callbackEndpointExpression, ExecutorService threadPool, boolean shutdownThreadPool, RecipientList recipientList) {
         super(camelContext, expression, delimiter);
         setAggregationStrategy(recipientList.getAggregationStrategy());
         setParallelProcessing(recipientList.isParallelProcessing());
@@ -44,19 +43,21 @@ public class WaitForChildrenProcessor extends org.apache.camel.processor.Recipie
         setTimeout(recipientList.getTimeout());
         setExecutorService(threadPool);
         setShutdownExecutorService(shutdownThreadPool);
-        this.aggregatorId = aggregatorId;
-        this.callbackEndpoint = callbackEndpoint;
+        this.aggregatorIdExpression = aggregatorIdExpression;
+        this.callbackEndpointExpression = callbackEndpointExpression;
         aggregateStore = AggregateStoreFactory.getStoreInstance();
     }
 
     @Override
     public String toString() {
-        return "Join(" + aggregatorId + ", " + super.toString() + ")";
+        return "Join(" + aggregatorIdExpression + ", " + callbackEndpointExpression + ", " + super.toString() + ")";
     }
 
     private boolean preProcess(Exchange exchange) throws Exception {
         String requestId = PlatformUtils.getRequestId(exchange);
         Payload payload = new Payload(exchange.getIn().getBody(byte[].class), exchange.getIn().getHeaders());
+        String aggregatorId = aggregatorIdExpression.evaluate(exchange, String.class);
+        String callbackEndpoint = callbackEndpointExpression.evaluate(exchange, String.class);
         boolean isJoinable = aggregateStore.joinWithWait(requestId, callbackEndpoint, ByteUtils.getBytes(payload), aggregatorId);
         if (isJoinable) {
             LOG.info("Parent request ID is now joinable " + requestId);

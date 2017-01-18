@@ -36,11 +36,11 @@ import static org.apache.camel.builder.SimpleBuilder.simple;
 public class JoinDefinition<Type extends ProcessorDefinition<Type>> extends RecipientListDefinition<Type> {
 
     @XmlAttribute(required = true)
-    private String aggregatorId;
+    private Expression aggregatorIdExpression;
 
-    public JoinDefinition(String aggregatorId) {
+    public JoinDefinition(Expression aggregatorIdExpression) {
         super(simple(JoinCallbackFactory.getCallbackEndpoint()));
-        this.aggregatorId = aggregatorId;
+        this.aggregatorIdExpression = aggregatorIdExpression;
     }
 
     @Override
@@ -50,12 +50,12 @@ public class JoinDefinition<Type extends ProcessorDefinition<Type>> extends Reci
 
     @Override
     public String getLabel() {
-        return "Join[" + aggregatorId + ", " + super.getLabel() + "]";
+        return "Join[" + aggregatorIdExpression + ", " + super.getLabel() + "]";
     }
 
     @Override
     public Processor createProcessor(RouteContext routeContext) throws Exception {
-        ObjectHelper.notNull(aggregatorId, "aggregatorId", this);
+        ObjectHelper.notNull(aggregatorIdExpression, "aggregatorId", this);
         Pipeline pipeline = (Pipeline) super.createProcessor(routeContext);
         List<Processor> processors = Lists.newArrayList(pipeline.getProcessors());
         RecipientList recipientList = (RecipientList) processors.get(1);
@@ -67,9 +67,9 @@ public class JoinDefinition<Type extends ProcessorDefinition<Type>> extends Reci
         JoinProcessor joinProcessor = null;
         String delimiter = getDelimiter();
         if (delimiter == null) {
-            joinProcessor = new JoinProcessor(routeContext.getCamelContext(), expression, aggregatorId, threadPool, shutdownThreadPool, recipientList);
+            joinProcessor = new JoinProcessor(routeContext.getCamelContext(), expression, aggregatorIdExpression, threadPool, shutdownThreadPool, recipientList);
         } else {
-            joinProcessor = new JoinProcessor(routeContext.getCamelContext(), expression, delimiter, aggregatorId, threadPool, shutdownThreadPool, recipientList);
+            joinProcessor = new JoinProcessor(routeContext.getCamelContext(), expression, delimiter, aggregatorIdExpression, threadPool, shutdownThreadPool, recipientList);
         }
         processors.set(1, joinProcessor);
         return Pipeline.newInstance(pipeline.getCamelContext(), processors);

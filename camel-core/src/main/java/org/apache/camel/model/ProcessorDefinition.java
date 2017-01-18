@@ -538,15 +538,8 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
         return (Type) this;
     }
 
-    public ForkDefinition<Type> fork(Expression recipients) {
-        ForkDefinition<Type> answer = new ForkDefinition<Type>(recipients);
-        addOutput(answer);
-        return answer;
-    }
-
-    public ForkDefinition<Type> fork(Expression recipients, String delimiter) {
-        ForkDefinition<Type> answer = new ForkDefinition<Type>(recipients);
-        answer.setDelimiter(delimiter);
+    public ForkDefinition<Type> fork(Expression recipient) {
+        ForkDefinition<Type> answer = new ForkDefinition<Type>(recipient);
         addOutput(answer);
         return answer;
     }
@@ -555,15 +548,8 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
         return fork(simple(recipient));
     }
 
-    public JoinableForkDefinition<Type> joinableFork(Expression recipients) {
-        JoinableForkDefinition<Type> answer = new JoinableForkDefinition<Type>(recipients);
-        addOutput(answer);
-        return answer;
-    }
-
-    public JoinableForkDefinition<Type> joinableFork(Expression recipients, String delimiter) {
-        JoinableForkDefinition<Type> answer = new JoinableForkDefinition<Type>(recipients);
-        answer.setDelimiter(delimiter);
+    public JoinableForkDefinition<Type> joinableFork(Expression recipient) {
+        JoinableForkDefinition<Type> answer = new JoinableForkDefinition<Type>(recipient);
         addOutput(answer);
         return answer;
     }

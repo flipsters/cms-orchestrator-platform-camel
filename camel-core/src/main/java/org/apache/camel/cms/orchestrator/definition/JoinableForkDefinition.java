@@ -32,8 +32,8 @@ public class JoinableForkDefinition<Type extends ProcessorDefinition<Type>> exte
   public JoinableForkDefinition() {
   }
 
-  public JoinableForkDefinition(Expression recipients) {
-    super(recipients);
+  public JoinableForkDefinition(Expression recipient) {
+    super(recipient);
   }
 
   @Override

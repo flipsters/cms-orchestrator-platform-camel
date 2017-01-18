@@ -30,8 +30,8 @@ public class ForkDefinition<Type extends ProcessorDefinition<Type>> extends Reci
   public ForkDefinition() {
   }
 
-  public ForkDefinition(Expression recipients) {
-    super(recipients);
+  public ForkDefinition(Expression recipient) {
+    super(recipient);
   }
 
   @Override

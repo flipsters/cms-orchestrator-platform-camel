@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import flipkart.cms.aggregator.client.AggregateStore;
 import flipkart.cms.aggregator.client.Aggregator;
 import flipkart.cms.aggregator.lock.exception.SynchronisedOperationException;
+import flipkart.cms.aggregator.model.ResumeObject;
 import lombok.Getter;
 import org.apache.camel.cms.orchestrator.aggregator.CamelPayloadAggregator;
 import org.apache.camel.cms.orchestrator.aggregator.Payload;
@@ -100,5 +101,27 @@ public class InMemoryAggregateStore implements AggregateStore {
     @Override
     public String getEndpoint(String parentId) throws IOException {
         return null;
+    }
+
+    @Override
+    public boolean createAsync(String trackId, String callbackEndpoint, byte[] payload, String aggregatorId) throws IOException, SynchronisedOperationException {
+        if (aggregatorId.equals("HACK")) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean receiveAsync(String trackId, byte[] payload) throws IOException, SynchronisedOperationException {
+        return false;
+    }
+
+    @Override
+    public ResumeObject resumeAsync(String trackId) throws IOException {
+        return null;
+    }
+
+    @Override
+    public void clearTrackId(String trackId) throws IOException {
     }
 }

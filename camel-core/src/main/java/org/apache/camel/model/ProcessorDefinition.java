@@ -17,11 +17,10 @@
 package org.apache.camel.model;
 
 import org.apache.camel.*;
-import org.apache.camel.builder.DataFormatClause;
-import org.apache.camel.builder.ExpressionBuilder;
-import org.apache.camel.builder.ExpressionClause;
-import org.apache.camel.builder.ProcessorBuilder;
+import org.apache.camel.builder.*;
+import org.apache.camel.cms.orchestrator.aggregator.TrackIdExtractor;
 import org.apache.camel.cms.orchestrator.definition.*;
+import org.apache.camel.cms.orchestrator.factory.AsyncCallbackFactory;
 import org.apache.camel.model.language.ConstantExpression;
 import org.apache.camel.model.language.ExpressionDefinition;
 import org.apache.camel.model.language.LanguageExpression;
@@ -1449,6 +1448,20 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
 
     public JoinDefinition<Type> join(String aggregatorId) {
         return join(simple(aggregatorId));
+    }
+
+    public AsyncTrackDefinition<Type> asyncTrack(Expression externalEndpoint, Expression callbackEndpointExpression,
+                                                 Expression aggregatorIdExpression, TrackIdExtractor trackIdExtractor) {
+        RecipientListDefinition asyncCallbackDefinition = new RecipientListDefinition(simple(AsyncCallbackFactory.getCallbackEndpoint()));
+        AsyncTrackDefinition<Type> answer = new AsyncTrackDefinition(externalEndpoint, callbackEndpointExpression, aggregatorIdExpression,
+                trackIdExtractor, asyncCallbackDefinition);
+        addOutput(answer);
+        return answer;
+    }
+
+    public AsyncTrackDefinition<Type> asyncTrack(String externalEndpoint, String callbackEndpoint, String aggregatorId,
+                                                 TrackIdExtractor trackIdExtractor) {
+        return asyncTrack(simple(externalEndpoint), simple(callbackEndpoint), simple(aggregatorId), trackIdExtractor);
     }
 
     /**

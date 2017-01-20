@@ -5,6 +5,7 @@ import org.apache.camel.*;
 import org.apache.camel.cms.orchestrator.aggregator.Payload;
 import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
 import org.apache.camel.cms.orchestrator.utils.ByteUtils;
+import org.apache.camel.cms.orchestrator.utils.OrchestratorUtils;
 import org.apache.camel.cms.orchestrator.utils.PlatformUtils;
 import org.apache.camel.processor.RecipientList;
 import org.slf4j.Logger;
@@ -55,6 +56,7 @@ public class JoinProcessor extends RecipientList {
         String requestId = PlatformUtils.getRequestId(exchange);
         String parentRequestId = PlatformUtils.getParentRequestId(exchange);
         Payload payload = new Payload(exchange.getIn().getBody(byte[].class), exchange.getIn().getHeaders());
+        OrchestratorUtils.removeCoreHeaders(payload.getHeaders());
         String aggregatorId = aggregatorIdExpression.evaluate(exchange, String.class);
         boolean isJoinable = aggregateStore.join(parentRequestId, requestId, ByteUtils.getBytes(payload), aggregatorId);
         if (isJoinable) {

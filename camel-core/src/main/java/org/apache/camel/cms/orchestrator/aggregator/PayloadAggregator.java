@@ -7,6 +7,13 @@ import java.io.IOException;
  */
 public interface PayloadAggregator {
 
+  /**
+   * @param existing can be null
+   * @param increment incremental payload
+   * @return payload the user wants to increment
+   * @throws IOException
+   * @throws ClassNotFoundException
+   */
   Payload aggregate(Payload existing, Payload increment) throws IOException, ClassNotFoundException;
 
   String getId();

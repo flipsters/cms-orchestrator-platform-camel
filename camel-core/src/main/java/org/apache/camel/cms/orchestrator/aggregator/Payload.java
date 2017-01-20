@@ -1,6 +1,7 @@
 package org.apache.camel.cms.orchestrator.aggregator;
 
 import com.google.common.collect.Maps;
+import lombok.Data;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.util.Map;
 /**
  * Created by pawas.kumar on 16/01/17.
  */
+@Data
 public class Payload implements Serializable {
 
   public Payload(byte[] body, Map<String, Object> headers) {

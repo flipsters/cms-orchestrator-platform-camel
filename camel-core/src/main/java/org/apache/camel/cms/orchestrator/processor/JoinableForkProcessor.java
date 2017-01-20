@@ -1,42 +1,53 @@
 package org.apache.camel.cms.orchestrator.processor;
 
 import flipkart.cms.aggregator.client.AggregateStore;
-import org.apache.camel.AsyncCallback;
-import org.apache.camel.Endpoint;
-import org.apache.camel.Exchange;
-import org.apache.camel.ExchangePattern;
+import org.apache.camel.*;
 import org.apache.camel.cms.orchestrator.OrchestratorConstants;
 import org.apache.camel.cms.orchestrator.utils.ForkUtils;
 import org.apache.camel.cms.orchestrator.exception.NoRequestIdPresentException;
 import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
-import org.apache.camel.processor.SendProcessor;
+import org.apache.camel.processor.RecipientList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Created by achit.ojha on 08/01/17.
  */
-public class JoinableForkProcessor extends SendProcessor {
+public class JoinableForkProcessor extends RecipientList {
 
     private static final Logger LOG = LoggerFactory.getLogger(JoinableForkProcessor.class);
 
     protected AggregateStore aggregateStore;
 
-    public JoinableForkProcessor(Endpoint destination) {
-        super(destination);
-        aggregateStore = AggregateStoreFactory.getStoreInstance();
+    public JoinableForkProcessor(CamelContext camelContext, Expression expression, ExecutorService threadPool,
+                                 boolean shutdownThreadPool, RecipientList recipientList) {
+        this(camelContext, expression, ",", threadPool, shutdownThreadPool, recipientList);
     }
 
-    public JoinableForkProcessor(Endpoint destination, ExchangePattern pattern) {
-        super(destination, pattern);
-        aggregateStore = AggregateStoreFactory.getStoreInstance();
+    public JoinableForkProcessor(CamelContext camelContext, Expression expression, String delimiter,
+                                 ExecutorService threadPool, boolean shutdownThreadPool, RecipientList recipientList) {
+        super(camelContext, expression, delimiter);
+        setAggregationStrategy(recipientList.getAggregationStrategy());
+        setParallelProcessing(recipientList.isParallelProcessing());
+        setParallelAggregate(recipientList.isParallelAggregate());
+        setStreaming(recipientList.isStreaming());
+        setShareUnitOfWork(recipientList.isShareUnitOfWork());
+        setStopOnException(recipientList.isStopOnException());
+        setIgnoreInvalidEndpoints(recipientList.isIgnoreInvalidEndpoints());
+        setCacheSize(recipientList.getCacheSize());
+        setOnPrepare(recipientList.getOnPrepare());
+        setTimeout(recipientList.getTimeout());
+        setExecutorService(threadPool);
+        setShutdownExecutorService(shutdownThreadPool);
+        this.aggregateStore = AggregateStoreFactory.getStoreInstance();
     }
 
     @Override
     public String toString() {
-        return "JoinableFork(" + destination + (pattern != null ? " " + pattern : "") + ")";
+        return "JoinableFork(" + super.toString() + ")";
     }
 
     private void preProcess(Exchange exchange) throws IOException, NoRequestIdPresentException {

@@ -6,42 +6,56 @@ import org.apache.camel.cms.orchestrator.aggregator.Payload;
 import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
 import org.apache.camel.cms.orchestrator.utils.ByteUtils;
 import org.apache.camel.cms.orchestrator.utils.PlatformUtils;
-import org.apache.camel.processor.SendProcessor;
+import org.apache.camel.processor.RecipientList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.ExecutorService;
 
 /**
  * Created by kartik.bommepally on 10/01/17.
  */
-public class JoinProcessor extends SendProcessor {
+public class JoinProcessor extends RecipientList {
 
     private static final Logger LOG = LoggerFactory.getLogger(JoinProcessor.class);
 
     private Expression aggregatorIdExpression;
     private AggregateStore aggregateStore;
 
-    public JoinProcessor(Expression aggregatorIdExpression, Endpoint destination) {
-        super(destination);
-        this.aggregatorIdExpression = aggregatorIdExpression;
-        aggregateStore = AggregateStoreFactory.getStoreInstance();
+    public JoinProcessor(CamelContext camelContext, Expression expression, Expression aggregatorIdExpression, ExecutorService threadPool,
+                                 boolean shutdownThreadPool, RecipientList recipientList) {
+        this(camelContext, expression, ",", aggregatorIdExpression, threadPool, shutdownThreadPool, recipientList);
     }
 
-    public JoinProcessor(Expression aggregatorIdExpression, Endpoint destination, ExchangePattern pattern) {
-        super(destination, pattern);
+    public JoinProcessor(CamelContext camelContext, Expression expression, String delimiter, Expression aggregatorIdExpression,
+                                 ExecutorService threadPool, boolean shutdownThreadPool, RecipientList recipientList) {
+        super(camelContext, expression, delimiter);
+        setAggregationStrategy(recipientList.getAggregationStrategy());
+        setParallelProcessing(recipientList.isParallelProcessing());
+        setParallelAggregate(recipientList.isParallelAggregate());
+        setStreaming(recipientList.isStreaming());
+        setShareUnitOfWork(recipientList.isShareUnitOfWork());
+        setStopOnException(recipientList.isStopOnException());
+        setIgnoreInvalidEndpoints(recipientList.isIgnoreInvalidEndpoints());
+        setCacheSize(recipientList.getCacheSize());
+        setOnPrepare(recipientList.getOnPrepare());
+        setTimeout(recipientList.getTimeout());
+        setExecutorService(threadPool);
+        setShutdownExecutorService(shutdownThreadPool);
         this.aggregatorIdExpression = aggregatorIdExpression;
         aggregateStore = AggregateStoreFactory.getStoreInstance();
     }
 
     @Override
     public String toString() {
-        return "Join(" + destination + (pattern != null ? " " + pattern : "") + ")";
+        return "Join(" + aggregatorIdExpression + ", " + super.toString() + ")";
     }
 
     private boolean preProcess(Exchange exchange) throws Exception {
         String requestId = PlatformUtils.getRequestId(exchange);
         String parentRequestId = PlatformUtils.getParentRequestId(exchange);
-        String aggregatorId = aggregatorIdExpression.evaluate(exchange, String.class);
         Payload payload = new Payload(exchange.getIn().getBody(byte[].class), exchange.getIn().getHeaders());
+        String aggregatorId = aggregatorIdExpression.evaluate(exchange, String.class);
         boolean isJoinable = aggregateStore.join(parentRequestId, requestId, ByteUtils.getBytes(payload), aggregatorId);
         if (isJoinable) {
             LOG.info("Parent request ID is now joinable " + parentRequestId);

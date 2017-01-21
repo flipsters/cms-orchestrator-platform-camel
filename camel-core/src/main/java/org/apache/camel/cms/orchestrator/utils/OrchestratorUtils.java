@@ -11,7 +11,7 @@ import java.util.Map;
  */
 public class OrchestratorUtils {
 
-  public static List<String> getHeaderTitles() {
+  public static List<String> getCoreHeaderTitles() {
     List<String> headers = Lists.newArrayList();
     headers.add(OrchestratorConstants.REQUEST_ID_HEADER);
     headers.add(OrchestratorConstants.PARENT_REQUEST_ID_HEADER);
@@ -22,7 +22,7 @@ public class OrchestratorUtils {
   }
 
   public static Map<String, Object> removeCoreHeaders(Map<String, Object> headers) {
-    for (String title : getHeaderTitles()) {
+    for (String title : getCoreHeaderTitles()) {
       headers.remove(title);
     }
     return headers;

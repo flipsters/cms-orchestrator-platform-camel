@@ -1,8 +1,8 @@
 package org.apache.camel.cms.orchestrator.utils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import org.apache.camel.cms.orchestrator.aggregator.Payload;
+
+import java.io.*;
 
 /**
  * Created by pawas.kumar on 17/01/17.
@@ -28,5 +28,25 @@ public class ByteUtils {
       }
     }
     return bytes;
+  }
+
+  public static <T> T fromBytes(byte[] bytes, Class<T> clazz)
+          throws IOException, ClassNotFoundException {
+    T obj = null;
+    ByteArrayInputStream bis = null;
+    ObjectInputStream ois = null;
+    try {
+      bis = new ByteArrayInputStream(bytes);
+      ois = new ObjectInputStream(bis);
+      obj = (T) ois.readObject();
+    } finally {
+      if (bis != null) {
+        bis.close();
+      }
+      if (ois != null) {
+        ois.close();
+      }
+    }
+    return obj;
   }
 }

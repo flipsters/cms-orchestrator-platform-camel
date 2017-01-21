@@ -6,6 +6,9 @@ import flipkart.cms.aggregator.client.AggregateStore;
 import flipkart.cms.aggregator.client.Aggregator;
 import flipkart.cms.aggregator.lock.exception.SynchronisedOperationException;
 import lombok.Getter;
+import org.apache.camel.cms.orchestrator.aggregator.CamelPayloadAggregator;
+import org.apache.camel.cms.orchestrator.aggregator.Payload;
+import org.apache.camel.cms.orchestrator.utils.OrchestratorUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -45,6 +48,17 @@ public class InMemoryAggregateStore implements AggregateStore {
 
     @Override
     public boolean join(String parentId, String childId, byte[] payload, String aggregatorId) throws IOException, SynchronisedOperationException {
+        Payload payload1 = null;
+        try {
+            payload1 = CamelPayloadAggregator.getPayload(payload);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        for (String title : OrchestratorUtils.getCoreHeaderTitles()) {
+            if (payload1.getHeaders().get(title) != null) {
+                throw new RuntimeException("Header should have been null " + title);
+            }
+        }
         put(parentId, childId);
         payloadMap.put(parentId + childId, payload);
         return isJoinable(parentId);

@@ -80,14 +80,13 @@ public class AsyncTrackProcessor extends RecipientList {
         return "AsyncTrack(" + callbackEndpointExpression + ", " + aggregatorIdExpression + ", " + super.toString() + ")";
     }
 
-    private boolean preProcess(String requestId, Exchange exchange) throws Exception {
+    private boolean preProcess(String requestId, Payload originalPayload, Exchange exchange) throws Exception {
         LOG.info("Extracting track ID for request ID " + requestId);
         String trackId = trackIdExtractor.getTrackId(exchange);
         LOG.info("Obtained track ID " + trackId + " for request ID " + requestId);
-        Payload payload = new Payload(exchange.getIn().getBody(byte[].class), exchange.getIn().getHeaders());
         String aggregatorId = aggregatorIdExpression.evaluate(exchange, String.class);
         String callbackEndpoint = callbackEndpointExpression.evaluate(exchange, String.class);
-        boolean isResumable = aggregateStore.createAsync(trackId, callbackEndpoint, ByteUtils.getBytes(payload), aggregatorId);
+        boolean isResumable = aggregateStore.createAsync(trackId, callbackEndpoint, ByteUtils.getBytes(originalPayload), aggregatorId);
         if (isResumable) {
             LOG.info("Track ID " + trackId + " with request ID " + requestId +  " is now resumable");
             exchange.getIn().setBody(trackId.getBytes());
@@ -98,8 +97,9 @@ public class AsyncTrackProcessor extends RecipientList {
     @Override
     public void process(Exchange exchange) throws Exception {
         String requestId = PlatformUtils.getRequestId(exchange);
+        Payload originalPayload = new Payload(exchange.getIn().getBody(byte[].class), exchange.getIn().getHeaders());
         super.process(exchange);
-        boolean isResumable = preProcess(requestId, exchange);
+        boolean isResumable = preProcess(requestId, originalPayload, exchange);
         if (isResumable) {
             asyncCallbackRecipientList.process(exchange);
         }
@@ -109,8 +109,9 @@ public class AsyncTrackProcessor extends RecipientList {
     public boolean process(Exchange exchange, final AsyncCallback callback) {
         try {
             String requestId = PlatformUtils.getRequestId(exchange);
+            Payload originalPayload = new Payload(exchange.getIn().getBody(byte[].class), exchange.getIn().getHeaders());
             super.process(exchange, callback);
-            boolean isResumable = preProcess(requestId, exchange);
+            boolean isResumable = preProcess(requestId, originalPayload, exchange);
             if (isResumable) {
                 asyncCallbackRecipientList.process(exchange);
             }

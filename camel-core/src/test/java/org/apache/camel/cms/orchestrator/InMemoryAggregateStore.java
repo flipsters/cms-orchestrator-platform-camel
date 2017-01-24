@@ -124,4 +124,8 @@ public class InMemoryAggregateStore implements AggregateStore {
     @Override
     public void clearTrackId(String trackId) throws IOException {
     }
+
+    @Override
+    public void close() throws IOException {
+    }
 }

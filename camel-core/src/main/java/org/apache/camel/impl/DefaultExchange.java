@@ -27,6 +27,7 @@ import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
 import org.apache.camel.Message;
 import org.apache.camel.MessageHistory;
+import org.apache.camel.cms.orchestrator.utils.PlatformUtils;
 import org.apache.camel.spi.Synchronization;
 import org.apache.camel.spi.UnitOfWork;
 import org.apache.camel.util.EndpointHelper;
@@ -216,6 +217,7 @@ public final class DefaultExchange implements Exchange {
     public Map<String, Object> getProperties() {
         if (properties == null) {
             properties = new ConcurrentHashMap<String, Object>();
+            PlatformUtils.addPlatformContext(properties);
         }
         return properties;
     }
@@ -226,6 +228,7 @@ public final class DefaultExchange implements Exchange {
 
     public void setProperties(Map<String, Object> properties) {
         this.properties = properties;
+        PlatformUtils.addPlatformContext(this.properties);
     }
 
     public Message getIn() {

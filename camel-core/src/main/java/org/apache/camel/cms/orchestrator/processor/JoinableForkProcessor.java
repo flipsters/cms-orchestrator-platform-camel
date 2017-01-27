@@ -6,6 +6,7 @@ import org.apache.camel.cms.orchestrator.OrchestratorConstants;
 import org.apache.camel.cms.orchestrator.utils.ForkUtils;
 import org.apache.camel.cms.orchestrator.exception.NoRequestIdPresentException;
 import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
+import org.apache.camel.cms.orchestrator.utils.PlatformContext;
 import org.apache.camel.processor.RecipientList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,9 +53,12 @@ public class JoinableForkProcessor extends RecipientList {
 
     private void preProcess(Exchange exchange) throws IOException, NoRequestIdPresentException {
         String routeId = ForkUtils.getRouteId(exchange);
-        if (exchange.getProperty(OrchestratorConstants.IS_FIRST_FORK_PROPERTY) == null) {
-            aggregateStore.clear(ForkUtils.getRequestId(exchange), routeId);
-            exchange.setProperty(OrchestratorConstants.IS_FIRST_FORK_PROPERTY, true);
+        PlatformContext platformContext = exchange.getProperty(OrchestratorConstants.PLATFORM_CONTEXT_PROPERTY, PlatformContext.class);
+        synchronized (platformContext) {
+            if (platformContext.isRoutesFirstFork()) {
+                aggregateStore.clear(ForkUtils.getRequestId(exchange), routeId);
+                platformContext.markForkDone();
+            }
         }
         ForkUtils.createChild(exchange);
         aggregateStore.fork(ForkUtils.getParentRequestId(exchange), ForkUtils.getRequestId(exchange), routeId);

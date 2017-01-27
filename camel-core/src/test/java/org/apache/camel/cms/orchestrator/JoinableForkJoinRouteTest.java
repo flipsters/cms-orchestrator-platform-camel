@@ -116,6 +116,7 @@ public class JoinableForkJoinRouteTest extends TestCase {
                             assertNotNull(rid2);
                             assertEquals(rid1, PlatformUtils.getParentRequestId(exchange));
                             assertEquals(0, exchange.getIn().getHeader("XYZ-0"));
+                            exchange.setProperty("Hello", "World");
                         }
                     })
                     .joinableFork("direct:childProcess3")

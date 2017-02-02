@@ -16,6 +16,9 @@ import org.apache.camel.main.Main;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by achit.ojha on 08/01/17.
@@ -74,6 +77,28 @@ public class JoinableForkJoinRouteTest extends TestCase {
         assertNotNull(aggregateStore.getRouteMap().get(rid11 + rid33));
 
         main.stop();
+    }
+
+    public void test () throws Exception {
+        aggregateStore = new InMemoryAggregateStore();
+        AggregateStoreFactory.registerStore(aggregateStore);
+        JoinCallbackFactory.registerCallbackEndpoint("direct:joinCallback");
+
+        Main main = new Main();
+        main.addRouteBuilder(new MyRouteBuilder());
+        main.enableTrace();
+        main.start();
+
+        List<CamelContext> contextList = main.getCamelContexts();
+        CamelContext camelContext = contextList.get(0);
+
+        MockEndpoint endpoint = camelContext.getEndpoint("mock:results", MockEndpoint.class);
+        endpoint.expectedMinimumMessageCount(1);
+
+        Map<String, Object> headers = Maps.newHashMap();
+        headers.put(OrchestratorConstants.PARENT_REQUEST_ID_HEADER, rid0);
+        headers.put(OrchestratorConstants.REQUEST_ID_HEADER, rid1);
+        main.getCamelTemplate().sendBodyAndHeaders("direct:start", Lists.newArrayList(1,2,3,4), headers);
     }
 
     public static class MyRouteBuilder extends RouteBuilder {

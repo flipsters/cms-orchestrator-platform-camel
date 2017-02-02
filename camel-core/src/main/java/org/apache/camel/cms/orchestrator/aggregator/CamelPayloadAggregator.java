@@ -44,7 +44,9 @@ public class CamelPayloadAggregator implements Aggregator {
     if (payload != null) {
       Map<String, Object> headers = payload.getHeaders();
       for (String title : OrchestratorUtils.getCoreHeaderTitles()) {
-        headerMap.put(title, headers.get(title));
+        if (headers.get(title) != null) {
+          headerMap.put(title, headers.get(title));
+        }
       }
     }
     return headerMap;

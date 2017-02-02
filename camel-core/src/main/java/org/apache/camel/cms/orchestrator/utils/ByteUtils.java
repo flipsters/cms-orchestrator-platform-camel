@@ -10,6 +10,8 @@ import java.io.*;
 public class ByteUtils {
 
   public static byte[] getBytes(Object obj) throws IOException {
+    if (obj == null)
+      return null;
     byte[] bytes = null;
     ByteArrayOutputStream bos = null;
     ObjectOutputStream oos = null;
@@ -32,6 +34,8 @@ public class ByteUtils {
 
   public static <T> T fromBytes(byte[] bytes, Class<T> clazz)
           throws IOException, ClassNotFoundException {
+    if (bytes == null)
+      return null;
     T obj = null;
     ByteArrayInputStream bis = null;
     ObjectInputStream ois = null;

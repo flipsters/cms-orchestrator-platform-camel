@@ -1,5 +1,7 @@
 package org.apache.camel.cms.orchestrator;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import flipkart.cms.aggregator.client.AggregateStore;
@@ -7,8 +9,14 @@ import flipkart.cms.aggregator.client.Aggregator;
 import flipkart.cms.aggregator.lock.exception.SynchronisedOperationException;
 import flipkart.cms.aggregator.model.ResumeObject;
 import lombok.Getter;
+import org.apache.camel.Exchange;
+import org.apache.camel.NoTypeConversionAvailableException;
+import org.apache.camel.TypeConversionException;
+import org.apache.camel.TypeConverter;
 import org.apache.camel.cms.orchestrator.aggregator.CamelPayloadAggregator;
+import org.apache.camel.cms.orchestrator.aggregator.MockTypeConverterRegistry;
 import org.apache.camel.cms.orchestrator.aggregator.Payload;
+import org.apache.camel.cms.orchestrator.utils.ByteUtils;
 import org.apache.camel.cms.orchestrator.utils.OrchestratorUtils;
 
 import java.io.IOException;
@@ -24,6 +32,7 @@ public class InMemoryAggregateStore implements AggregateStore {
     private Map<String, List<String>> childMap = Maps.newHashMap();
     private Map<String, String> routeMap = Maps.newHashMap();
     private Map<String, byte[]> payloadMap = Maps.newHashMap();
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     private synchronized void put(String parentId, String childId) {
         if (!childMap.containsKey(parentId)) {
@@ -50,8 +59,54 @@ public class InMemoryAggregateStore implements AggregateStore {
     @Override
     public boolean join(String parentId, String childId, byte[] payload, String aggregatorId) throws IOException, SynchronisedOperationException {
         Payload payload1 = null;
+        TypeConverter byteTypeConvertor = new TypeConverter() {
+            @Override
+            public boolean allowNull() {
+                return false;
+            }
+
+            @Override
+            public <T> T convertTo(Class<T> type, Object value) throws TypeConversionException {
+                try {
+                    return objectMapper.readValue((byte[]) value, new TypeReference<Payload<byte[]>>() {});
+                } catch (IOException e) {
+                    throw new TypeConversionException(value, type, e);
+                }
+            }
+
+            @Override
+            public <T> T convertTo(Class<T> type, Exchange exchange, Object value) throws TypeConversionException {
+                try {
+                    return objectMapper.readValue((byte[]) value, type);
+                } catch (IOException e) {
+                    throw new TypeConversionException(value, type, e.getCause());
+                }
+            }
+
+            @Override
+            public <T> T mandatoryConvertTo(Class<T> type, Object value) throws TypeConversionException, NoTypeConversionAvailableException {
+                return null;
+            }
+
+            @Override
+            public <T> T mandatoryConvertTo(Class<T> type, Exchange exchange, Object value) throws TypeConversionException, NoTypeConversionAvailableException {
+                return null;
+            }
+
+            @Override
+            public <T> T tryConvertTo(Class<T> type, Object value) {
+                return null;
+            }
+
+            @Override
+            public <T> T tryConvertTo(Class<T> type, Exchange exchange, Object value) {
+                return null;
+            }
+        };
+        MockTypeConverterRegistry mockTypeConverterRegistry = new MockTypeConverterRegistry();
+        mockTypeConverterRegistry.addTypeConverter(byte[].class, Payload.class, byteTypeConvertor);
         try {
-            payload1 = CamelPayloadAggregator.getPayload(payload);
+            payload1 = getPayload(payload, mockTypeConverterRegistry);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -63,6 +118,14 @@ public class InMemoryAggregateStore implements AggregateStore {
         put(parentId, childId);
         payloadMap.put(parentId + childId, payload);
         return isJoinable(parentId);
+    }
+
+    public Payload getPayload(byte[] bytes, MockTypeConverterRegistry typeConverterRegistry)
+        throws IOException, ClassNotFoundException {
+        Payload payload = typeConverterRegistry.lookup(Payload.class, byte[].class).convertTo(Payload.class, bytes);
+        Class bodyType = payload.getBodyType();
+        payload.setBody(typeConverterRegistry.lookup(bodyType, byte[].class).convertTo(bodyType, payload.getBody()));
+        return payload;
     }
 
     @Override

@@ -86,7 +86,8 @@ public class AsyncTrackProcessor extends RecipientList {
         LOG.info("Obtained track ID " + trackId + " for request ID " + requestId);
         String aggregatorId = aggregatorIdExpression.evaluate(exchange, String.class);
         String callbackEndpoint = callbackEndpointExpression.evaluate(exchange, String.class);
-        boolean isResumable = aggregateStore.createAsync(trackId, callbackEndpoint, ByteUtils.getBytes(originalPayload), aggregatorId);
+        byte[] rawPayload = ByteUtils.getByteArrayFromPayload(getCamelContext().getTypeConverterRegistry(), originalPayload);
+        boolean isResumable = aggregateStore.createAsync(trackId, callbackEndpoint, rawPayload, aggregatorId);
         if (isResumable) {
             LOG.info("Track ID " + trackId + " with request ID " + requestId +  " is now resumable");
             exchange.getIn().setBody(trackId.getBytes());
@@ -97,7 +98,7 @@ public class AsyncTrackProcessor extends RecipientList {
     @Override
     public void process(Exchange exchange) throws Exception {
         String requestId = PlatformUtils.getRequestId(exchange);
-        Payload originalPayload = new Payload(exchange.getIn().getBody(byte[].class), exchange.getIn().getHeaders());
+        Payload originalPayload = ByteUtils.createPayload(exchange);
         super.process(exchange);
         boolean isResumable = preProcess(requestId, originalPayload, exchange);
         if (isResumable) {
@@ -109,7 +110,7 @@ public class AsyncTrackProcessor extends RecipientList {
     public boolean process(Exchange exchange, final AsyncCallback callback) {
         try {
             String requestId = PlatformUtils.getRequestId(exchange);
-            Payload originalPayload = new Payload(exchange.getIn().getBody(byte[].class), exchange.getIn().getHeaders());
+            Payload originalPayload = ByteUtils.createPayload(exchange);
             super.process(exchange, callback);
             boolean isResumable = preProcess(requestId, originalPayload, exchange);
             if (isResumable) {

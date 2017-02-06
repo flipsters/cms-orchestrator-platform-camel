@@ -98,9 +98,6 @@ public class KafkaProducer<K, V> extends DefaultProducer {
         boolean hasMessageKey = messageKey != null;
 
         V msg = (V) exchange.getIn().getBody();
-        if (!(msg instanceof byte[] || msg instanceof String)) {
-            throw new RuntimeException("Given type is not supported : " + msg.getClass());
-        }
         CamelKafkaGenericObject<V> headerMsg = new CamelKafkaGenericObject.CamelKafkaGenericObjectBuilder<V>()
             .setBody(msg)
             .setHeaders(exchange.getIn().getHeaders())

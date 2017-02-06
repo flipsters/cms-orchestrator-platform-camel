@@ -1,6 +1,9 @@
 package org.apache.camel.cms.orchestrator.utils;
 
+import org.apache.camel.Exchange;
+import org.apache.camel.TypeConverter;
 import org.apache.camel.cms.orchestrator.aggregator.Payload;
+import org.apache.camel.spi.TypeConverterRegistry;
 
 import java.io.*;
 
@@ -9,48 +12,19 @@ import java.io.*;
  */
 public class ByteUtils {
 
-  public static byte[] getBytes(Object obj) throws IOException {
-    if (obj == null)
-      return null;
-    byte[] bytes = null;
-    ByteArrayOutputStream bos = null;
-    ObjectOutputStream oos = null;
-    try {
-      bos = new ByteArrayOutputStream();
-      oos = new ObjectOutputStream(bos);
-      oos.writeObject(obj);
-      oos.flush();
-      bytes = bos.toByteArray();
-    } finally {
-      if (oos != null) {
-        oos.close();
-      }
-      if (bos != null) {
-        bos.close();
-      }
+  public static Payload createPayload(Exchange exchange) {
+    Class bodyType = null;
+    if (exchange.getIn().getBody() != null) {
+      bodyType = exchange.getIn().getBody().getClass();
     }
-    return bytes;
+    return new Payload(exchange.getIn().getBody(byte[].class), exchange.getIn().getHeaders(), bodyType);
   }
 
-  public static <T> T fromBytes(byte[] bytes, Class<T> clazz)
-          throws IOException, ClassNotFoundException {
-    if (bytes == null)
-      return null;
-    T obj = null;
-    ByteArrayInputStream bis = null;
-    ObjectInputStream ois = null;
-    try {
-      bis = new ByteArrayInputStream(bytes);
-      ois = new ObjectInputStream(bis);
-      obj = (T) ois.readObject();
-    } finally {
-      if (bis != null) {
-        bis.close();
-      }
-      if (ois != null) {
-        ois.close();
-      }
+  public static byte[] getByteArrayFromPayload(TypeConverterRegistry typeConverterRegistry, Payload payload) {
+    TypeConverter lookup = typeConverterRegistry.lookup(byte[].class, Payload.class);
+    if (lookup == null) {
+      throw new RuntimeException("Type converter from " + payload.getBodyType() + " to byte[] not found");
     }
-    return obj;
+    return lookup.convertTo(byte[].class, payload);
   }
 }

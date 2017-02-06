@@ -82,6 +82,10 @@ public class RecipientList extends ServiceSupport implements AsyncProcessor {
         this.delimiter = delimiter;
     }
 
+    public CamelContext getCamelContext() {
+        return camelContext;
+    }
+
     public RecipientList(CamelContext camelContext, Expression expression) {
         // use comma by default as delimiter
         this(camelContext, expression, ",");

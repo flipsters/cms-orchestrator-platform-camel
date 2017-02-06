@@ -55,10 +55,11 @@ public class JoinProcessor extends RecipientList {
     private boolean preProcess(Exchange exchange) throws Exception {
         String requestId = PlatformUtils.getRequestId(exchange);
         String parentRequestId = PlatformUtils.getParentRequestId(exchange);
-        Payload payload = new Payload(exchange.getIn().getBody(byte[].class), exchange.getIn().getHeaders());
+        Payload payload = ByteUtils.createPayload(exchange);
         OrchestratorUtils.removeCoreHeaders(payload.getHeaders());
         String aggregatorId = aggregatorIdExpression.evaluate(exchange, String.class);
-        boolean isJoinable = aggregateStore.join(parentRequestId, requestId, ByteUtils.getBytes(payload), aggregatorId);
+        byte[] rawPayload = ByteUtils.getByteArrayFromPayload(getCamelContext().getTypeConverterRegistry(), payload);
+        boolean isJoinable = aggregateStore.join(parentRequestId, requestId, rawPayload, aggregatorId);
         if (isJoinable) {
             LOG.info("Parent request ID is now joinable " + parentRequestId);
             exchange.getIn().setBody(parentRequestId.getBytes());

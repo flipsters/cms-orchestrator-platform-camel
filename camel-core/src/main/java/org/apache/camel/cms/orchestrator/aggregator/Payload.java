@@ -2,6 +2,7 @@ package org.apache.camel.cms.orchestrator.aggregator;
 
 import com.google.common.collect.Maps;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -15,11 +16,13 @@ import java.util.Map;
  * Created by pawas.kumar on 16/01/17.
  */
 @Data
-public class Payload implements Serializable {
+@NoArgsConstructor
+public class Payload<A> implements Serializable {
 
-  public Payload(byte[] body, Map<String, Object> headers) {
+  public Payload(A body, Map<String, Object> headers) {
     this.body = body;
     this.headers = Maps.newHashMap();
+    this.bodyType = body.getClass();
     if (headers != null) {
       for (Map.Entry<String, Object> header : headers.entrySet()) {
         if (getValidPayloadHeaderValue(header.getValue())) {
@@ -29,9 +32,24 @@ public class Payload implements Serializable {
     }
   }
 
-  private byte[] body;
+  public Payload(A body, Map<String, Object> headers, Class bodyType) {
+    this.body = body;
+    this.headers = Maps.newHashMap();
+    this.bodyType = bodyType;
+    if (headers != null) {
+      for (Map.Entry<String, Object> header : headers.entrySet()) {
+        if (getValidPayloadHeaderValue(header.getValue())) {
+          this.headers.put(header.getKey(), header.getValue());
+        }
+      }
+    }
+  }
+
+  private A body;
 
   private Map<String, Object> headers;
+
+  private Class bodyType;
 
   private boolean getValidPayloadHeaderValue(Object headerValue) {
     if (headerValue instanceof String) {

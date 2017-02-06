@@ -5,7 +5,7 @@ import java.io.IOException;
 /**
  * Created by pawas.kumar on 16/01/17.
  */
-public interface PayloadAggregator {
+public interface PayloadAggregator<I,O> {
 
   /**
    * @param existing can be null
@@ -14,7 +14,7 @@ public interface PayloadAggregator {
    * @throws IOException
    * @throws ClassNotFoundException
    */
-  Payload aggregate(Payload existing, Payload increment) throws IOException, ClassNotFoundException;
+  Payload<O> aggregate(Payload<O> existing, Payload<I> increment) throws IOException, ClassNotFoundException;
 
   String getId();
 

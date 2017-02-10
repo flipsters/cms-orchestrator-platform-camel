@@ -105,11 +105,7 @@ public class InMemoryAggregateStore implements AggregateStore {
         };
         MockTypeConverterRegistry mockTypeConverterRegistry = new MockTypeConverterRegistry();
         mockTypeConverterRegistry.addTypeConverter(byte[].class, Payload.class, byteTypeConvertor);
-        try {
-            payload1 = getPayload(payload, mockTypeConverterRegistry);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        payload1 = new Payload(payload, Maps.newHashMap());
         for (String title : OrchestratorUtils.getCoreHeaderTitles()) {
             if (payload1.getHeaders().get(title) != null) {
                 throw new RuntimeException("Header should have been null " + title);
@@ -118,14 +114,6 @@ public class InMemoryAggregateStore implements AggregateStore {
         put(parentId, childId);
         payloadMap.put(parentId + childId, payload);
         return isJoinable(parentId);
-    }
-
-    public Payload getPayload(byte[] bytes, MockTypeConverterRegistry typeConverterRegistry)
-        throws IOException, ClassNotFoundException {
-        Payload payload = typeConverterRegistry.lookup(Payload.class, byte[].class).convertTo(Payload.class, bytes);
-        Class bodyType = payload.getBodyType();
-        payload.setBody(typeConverterRegistry.lookup(bodyType, byte[].class).convertTo(bodyType, payload.getBody()));
-        return payload;
     }
 
     @Override

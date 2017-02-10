@@ -8,14 +8,31 @@ import java.io.IOException;
 public interface PayloadAggregator<I,O> {
 
   /**
-   * @param existing can be null
-   * @param increment incremental payload
+   * Aggregates the overall computed payload with the incremental.
+   * @param existing computed payload so far, can be null.
+   * @param increment incremental payload, can be null.
    * @return payload the user wants to increment
    * @throws IOException
    * @throws ClassNotFoundException
    */
   Payload<O> aggregate(Payload<O> existing, Payload<I> increment) throws IOException, ClassNotFoundException;
 
+  /**
+   * provide the type converters for the mentioned type to and from byte[].
+   * @return the type of the overall computed payload. This would be used for deserialization.
+     */
+  Class getExistingType();
+
+  /**
+   * provide the type converters for the mentioned type to and from byte[].
+   * @return the type of the incremental payload. This would be used for deserialization.
+     */
+  Class getIncrementType();
+
+  /**
+   * return the aggregator ID which would be referenced in the aggregator store.
+   * @return
+     */
   String getId();
 
 }

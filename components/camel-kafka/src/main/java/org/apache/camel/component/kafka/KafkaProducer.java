@@ -97,7 +97,7 @@ public class KafkaProducer<K, V> extends DefaultProducer {
         K messageKey = (K) exchange.getIn().getHeader(KafkaConstants.KEY);
         boolean hasMessageKey = messageKey != null;
 
-        V msg = (V) exchange.getIn().getBody();
+        V msg = (V) exchange.getIn().getBody(byte[].class);
         CamelKafkaGenericObject<V> headerMsg = new CamelKafkaGenericObject.CamelKafkaGenericObjectBuilder<V>()
             .setBody(msg)
             .setHeaders(exchange.getIn().getHeaders())

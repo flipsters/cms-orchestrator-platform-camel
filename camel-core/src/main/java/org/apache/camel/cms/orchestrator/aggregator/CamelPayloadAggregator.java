@@ -27,12 +27,12 @@ public class CamelPayloadAggregator<I,O> implements Aggregator {
     Payload<O> existingPayload;
     Payload<I> incrementalPayload;
     try {
-      existingPayload = getPayload(existing);
-      incrementalPayload = getPayload(incremental);
+      existingPayload = getPayload(existing, aggregator.getExistingType());
+      incrementalPayload = getPayload(incremental, aggregator.getIncrementType());
       Map<String, Object> coreHeaders = getCoreHeaders(existingPayload, incrementalPayload);
       Payload aggregate = aggregator.aggregate(existingPayload, incrementalPayload);
       aggregate.getHeaders().putAll(coreHeaders);
-      return createPayloadByteArray(aggregate);
+      return createPayloadByteArray(aggregate, aggregator.getExistingType());
     } catch (IOException | ClassNotFoundException e) {
       log.error("Not able to deserialize the byte array!!");
       throw new RuntimeException("Not able to deserialize bytes");
@@ -61,32 +61,53 @@ public class CamelPayloadAggregator<I,O> implements Aggregator {
     return aggregator.getId();
   }
 
-  public Payload getPayload(byte[] bytes)
+  /**
+   * Returns payload transformation of the given byte[].
+   * @param bytes
+   * @param bodyType
+   * @return null if byte[] or bodyType is missing or body inside payload is null.
+   * @throws IOException
+   * @throws ClassNotFoundException
+     */
+  public Payload getPayload(byte[] bytes, Class bodyType)
       throws IOException, ClassNotFoundException {
+    if (bytes == null || bodyType == null) {
+      return null;
+    }
     Payload payload = typeConverterRegistry.lookup(Payload.class, byte[].class).convertTo(Payload.class, bytes);
-    Class bodyType = payload.getBodyType();
-    if (bodyType == null) {
+    if (bodyType.equals(byte[].class)) {
+      return payload;
+    }
+    if (payload.getBody() == null) {
       return null;
     }
     TypeConverter lookup = typeConverterRegistry.lookup(bodyType, byte[].class);
     if (lookup == null) {
-      log.error("Type converter from byte[] to {} not found", payload.getBodyType());
-      throw new RuntimeException("Type converter from byte[] to " + payload.getBodyType() + "not found");
+      log.error("Type converter from byte[] to {} not found", bodyType);
+      throw new RuntimeException("Type converter from byte[] to " + bodyType + " not found");
     }
     payload.setBody(lookup.convertTo(bodyType, payload.getBody()));
     return payload;
   }
 
-  public byte[] createPayloadByteArray(Payload payload)
+  /**
+   * Converts payload body into byte[] and returns byte[] transformation of the computed payload.
+   * @param payload to be converted (can have a user difened class in body)
+   * @param bodyType class type of the body inside payload.
+   * @return
+   * @throws IOException
+   * @throws ClassNotFoundException
+     */
+  public byte[] createPayloadByteArray(Payload payload, Class bodyType)
       throws IOException, ClassNotFoundException {
-    TypeConverter lookup = typeConverterRegistry.lookup(byte[].class, payload.getBodyType());
+    TypeConverter lookup = typeConverterRegistry.lookup(byte[].class, bodyType);
     if (lookup != null) {
       byte[] payloadByte = lookup.convertTo(byte[].class, payload.getBody());
-      Payload<byte[]> finalPayload = new Payload<>(payloadByte, payload.getHeaders(), payload.getBodyType());
+      Payload<byte[]> finalPayload = new Payload<>(payloadByte, payload.getHeaders());
       return typeConverterRegistry.lookup(byte[].class, Payload.class).convertTo(byte[].class, finalPayload);
     } else {
-      log.error("Type converter from {} to byte[] not found", payload.getBodyType());
-      throw new RuntimeException("Type converter from " + payload.getBodyType() + " to byte[] not found");
+      log.error("Type converter from {} to byte[] not found.", bodyType);
+      throw new RuntimeException("Type converter from " + bodyType + " to byte[] not found");
     }
   }
 }

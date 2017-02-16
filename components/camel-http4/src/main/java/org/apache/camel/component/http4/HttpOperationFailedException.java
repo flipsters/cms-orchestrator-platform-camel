@@ -31,7 +31,7 @@ public class HttpOperationFailedException extends CamelException {
     private final String responseBody;
 
     public HttpOperationFailedException(String uri, int statusCode, String statusText, String location, Map<String, String> responseHeaders, String responseBody) {
-        super("HTTP operation failed invoking " + uri + " with statusCode: " + statusCode + (location != null ? ", redirectLocation: " + location : ""));
+        super("HTTP operation failed invoking " + uri + " with statusCode: " + statusCode + " with response: " + responseBody + (location != null ? ", redirectLocation: " + location : ""));
         this.uri = uri;
         this.statusCode = statusCode;
         this.statusText = statusText;

@@ -1,19 +1,22 @@
 package org.apache.camel.cms.orchestrator;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
-import org.apache.camel.CamelContext;
-import org.apache.camel.Exchange;
-import org.apache.camel.Processor;
+import org.apache.camel.*;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.cms.orchestrator.aggregator.Payload;
 import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
 import org.apache.camel.cms.orchestrator.factory.JoinCallbackFactory;
 import org.apache.camel.cms.orchestrator.utils.PlatformUtils;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.main.Main;
+import org.apache.camel.spi.TypeConverterRegistry;
+import org.apache.camel.support.TypeConverterSupport;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -36,6 +39,7 @@ public class JoinableForkJoinRouteTest extends TestCase {
     private static String rid22 = null;
     private static String rid33 = null;
     private static int joinCallbackCount = 0;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public void testMain() throws Exception {
 
@@ -50,6 +54,27 @@ public class JoinableForkJoinRouteTest extends TestCase {
 
         List<CamelContext> contextList = main.getCamelContexts();
         CamelContext camelContext = contextList.get(0);
+        TypeConverterRegistry typeConverterRegistry = camelContext.getTypeConverterRegistry();
+        TypeConverter objectToByte = new TypeConverterSupport() {
+            @Override
+            public <T> T convertTo(Class<T> type, Object value) throws TypeConversionException {
+                try {
+                    return (T) objectMapper.writeValueAsBytes(value);
+                } catch (IOException e) {
+                    throw new TypeConversionException(value, type, e);
+                }
+            }
+
+            @Override
+            public <T> T convertTo(Class<T> type, Exchange exchange, Object value) throws TypeConversionException {
+                try {
+                    return (T) objectMapper.writeValueAsBytes(value);
+                } catch (IOException e) {
+                    throw new TypeConversionException(value, type, e.getCause());
+                }
+            }
+        };
+        typeConverterRegistry.addTypeConverter(byte[].class, Payload.class, objectToByte);
 
         MockEndpoint endpoint = camelContext.getEndpoint("mock:results", MockEndpoint.class);
         endpoint.expectedMinimumMessageCount(1);
@@ -81,7 +106,7 @@ public class JoinableForkJoinRouteTest extends TestCase {
 
     public void test () throws Exception {
         aggregateStore = new InMemoryAggregateStore();
-        AggregateStoreFactory.registerStore(aggregateStore);
+//        AggregateStoreFactory.registerStore(aggregateStore);
         JoinCallbackFactory.registerCallbackEndpoint("direct:joinCallback");
 
         Main main = new Main();
@@ -91,6 +116,27 @@ public class JoinableForkJoinRouteTest extends TestCase {
 
         List<CamelContext> contextList = main.getCamelContexts();
         CamelContext camelContext = contextList.get(0);
+        TypeConverterRegistry typeConverterRegistry = camelContext.getTypeConverterRegistry();
+        TypeConverter objectToByte = new TypeConverterSupport() {
+            @Override
+            public <T> T convertTo(Class<T> type, Object value) throws TypeConversionException {
+                try {
+                    return (T) objectMapper.writeValueAsBytes(value);
+                } catch (IOException e) {
+                    throw new TypeConversionException(value, type, e);
+                }
+            }
+
+            @Override
+            public <T> T convertTo(Class<T> type, Exchange exchange, Object value) throws TypeConversionException {
+                try {
+                    return (T) objectMapper.writeValueAsBytes(value);
+                } catch (IOException e) {
+                    throw new TypeConversionException(value, type, e.getCause());
+                }
+            }
+        };
+        typeConverterRegistry.addTypeConverter(byte[].class, Payload.class, objectToByte);
 
         MockEndpoint endpoint = camelContext.getEndpoint("mock:results", MockEndpoint.class);
         endpoint.expectedMinimumMessageCount(1);

@@ -1454,7 +1454,7 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
                                                  Expression aggregatorIdExpression, TrackIdExtractor trackIdExtractor) {
         RecipientListDefinition asyncCallbackDefinition = new RecipientListDefinition(simple(AsyncCallbackFactory.getCallbackEndpoint()));
         AsyncTrackDefinition<Type> answer = new AsyncTrackDefinition(externalEndpoint, callbackEndpointExpression, aggregatorIdExpression,
-                trackIdExtractor, asyncCallbackDefinition);
+                asyncCallbackDefinition);
         addOutput(answer);
         return answer;
     }

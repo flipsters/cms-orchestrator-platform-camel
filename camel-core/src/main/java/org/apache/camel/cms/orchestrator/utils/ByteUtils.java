@@ -6,8 +6,6 @@ import org.apache.camel.TypeConverter;
 import org.apache.camel.cms.orchestrator.aggregator.Payload;
 import org.apache.camel.spi.TypeConverterRegistry;
 
-import java.io.*;
-
 /**
  * Created by pawas.kumar on 17/01/17.
  */

@@ -41,18 +41,14 @@ public class AsyncTrackDefinition<Type extends ProcessorDefinition<Type>> extend
     private Expression aggregatorIdExpression;
 
     @XmlAttribute(required = true)
-    private TrackIdExtractor trackIdExtractor;
-
-    @XmlAttribute(required = true)
     private RecipientListDefinition<Type> asyncCallbackDefinition;
 
     public AsyncTrackDefinition(Expression externalEndpoint, Expression callbackEndpointExpression,
-                                Expression aggregatorIdExpression, TrackIdExtractor trackIdExtractor,
+                                Expression aggregatorIdExpression,
                                 RecipientListDefinition<Type> asyncCallbackDefinition) {
         super(externalEndpoint);
         this.callbackEndpointExpression = callbackEndpointExpression;
         this.aggregatorIdExpression = aggregatorIdExpression;
-        this.trackIdExtractor = trackIdExtractor;
         this.asyncCallbackDefinition = asyncCallbackDefinition;
     }
 
@@ -70,13 +66,12 @@ public class AsyncTrackDefinition<Type extends ProcessorDefinition<Type>> extend
     public Processor createProcessor(RouteContext routeContext) throws Exception {
         ObjectHelper.notNull(callbackEndpointExpression, "callbackEndpoint", this);
         ObjectHelper.notNull(aggregatorIdExpression, "aggregatorId", this);
-        ObjectHelper.notNull(trackIdExtractor, "trackIdExtractor", this);
         Pipeline pipeline = (Pipeline) super.createProcessor(routeContext);
         List<Processor> processors = Lists.newArrayList(pipeline.getProcessors());
         RecipientList recipientList = (RecipientList) processors.get(1);
         Expression expression = getExpression().createExpression(routeContext);
         boolean isParallelProcessing = recipientList.isParallelProcessing();
-        boolean shutdownThreadPool = ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this, isParallelProcessing);
+        boolean shutdownThreadPool = ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext, this, isParallelProcessing);
         ExecutorService threadPool = ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,
                 "Join", this, isParallelProcessing);
         AsyncTrackProcessor asyncTrackProcessor = null;
@@ -86,10 +81,10 @@ public class AsyncTrackDefinition<Type extends ProcessorDefinition<Type>> extend
         RecipientList asyncCallbackRecipientList = (RecipientList) asyncCallbackProcessors.get(1);
         if (delimiter == null) {
             asyncTrackProcessor = new AsyncTrackProcessor(routeContext.getCamelContext(), expression, callbackEndpointExpression,
-                    aggregatorIdExpression, trackIdExtractor, asyncCallbackRecipientList, threadPool, shutdownThreadPool, recipientList);
+                    aggregatorIdExpression, asyncCallbackRecipientList, threadPool, shutdownThreadPool, recipientList);
         } else {
             asyncTrackProcessor = new AsyncTrackProcessor(routeContext.getCamelContext(), expression, delimiter,
-                    callbackEndpointExpression, aggregatorIdExpression, trackIdExtractor, asyncCallbackRecipientList, threadPool,
+                    callbackEndpointExpression, aggregatorIdExpression, asyncCallbackRecipientList, threadPool,
                     shutdownThreadPool, recipientList);
         }
         processors.set(1, asyncTrackProcessor);

@@ -10,6 +10,7 @@ public class OrchestratorConstants {
     public static final String PARENT_REQUEST_ID_HEADER = "X-ParentRequestId";
     public static final String PARENT_REQUEST_ID_DELIM = "<~>";
     public static final String TRACK_ID_HEADER = "X-TrackId";
+    public static final String ASYNC_TRACK_ID_HEADER = "X-Async-TrackId";
     public static final String TENANT_ID_HEADER = "X-TenantId";
     public static final String PIPELINE_HANDLE_HEADER = "X-PipelineHandle";
     public static final String PLATFORM_CONTEXT_PROPERTY = "X-PlatformContext";

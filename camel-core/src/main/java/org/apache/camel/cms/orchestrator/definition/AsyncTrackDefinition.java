@@ -3,10 +3,9 @@ package org.apache.camel.cms.orchestrator.definition;
 import com.google.common.collect.Lists;
 import org.apache.camel.Expression;
 import org.apache.camel.Processor;
-import org.apache.camel.cms.orchestrator.aggregator.TrackIdExtractor;
-import org.apache.camel.cms.orchestrator.factory.JoinCallbackFactory;
+import org.apache.camel.cms.orchestrator.aggregator.AsyncAckExtractor;
+import org.apache.camel.cms.orchestrator.aggregator.CallbackUrlAppender;
 import org.apache.camel.cms.orchestrator.processor.AsyncTrackProcessor;
-import org.apache.camel.cms.orchestrator.processor.JoinProcessor;
 import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.model.ProcessorDefinitionHelper;
 import org.apache.camel.model.RecipientListDefinition;
@@ -41,18 +40,22 @@ public class AsyncTrackDefinition<Type extends ProcessorDefinition<Type>> extend
     private Expression aggregatorIdExpression;
 
     @XmlAttribute(required = true)
-    private TrackIdExtractor trackIdExtractor;
+    private AsyncAckExtractor asyncAckExtractor;
+
+    @XmlAttribute(required = true)
+    private CallbackUrlAppender callbackUrlAppender;
 
     @XmlAttribute(required = true)
     private RecipientListDefinition<Type> asyncCallbackDefinition;
 
     public AsyncTrackDefinition(Expression externalEndpoint, Expression callbackEndpointExpression,
-                                Expression aggregatorIdExpression, TrackIdExtractor trackIdExtractor,
+                                Expression aggregatorIdExpression, CallbackUrlAppender callbackUrlAppender, AsyncAckExtractor asyncAckExtractor,
                                 RecipientListDefinition<Type> asyncCallbackDefinition) {
         super(externalEndpoint);
         this.callbackEndpointExpression = callbackEndpointExpression;
         this.aggregatorIdExpression = aggregatorIdExpression;
-        this.trackIdExtractor = trackIdExtractor;
+        this.callbackUrlAppender = callbackUrlAppender;
+        this.asyncAckExtractor = asyncAckExtractor;
         this.asyncCallbackDefinition = asyncCallbackDefinition;
     }
 
@@ -70,7 +73,8 @@ public class AsyncTrackDefinition<Type extends ProcessorDefinition<Type>> extend
     public Processor createProcessor(RouteContext routeContext) throws Exception {
         ObjectHelper.notNull(callbackEndpointExpression, "callbackEndpoint", this);
         ObjectHelper.notNull(aggregatorIdExpression, "aggregatorId", this);
-        ObjectHelper.notNull(trackIdExtractor, "trackIdExtractor", this);
+        ObjectHelper.notNull(asyncAckExtractor, "asyncAckExtractor", this);
+        ObjectHelper.notNull(callbackUrlAppender, "callbackUrlAppender", this);
         Pipeline pipeline = (Pipeline) super.createProcessor(routeContext);
         List<Processor> processors = Lists.newArrayList(pipeline.getProcessors());
         RecipientList recipientList = (RecipientList) processors.get(1);
@@ -86,10 +90,10 @@ public class AsyncTrackDefinition<Type extends ProcessorDefinition<Type>> extend
         RecipientList asyncCallbackRecipientList = (RecipientList) asyncCallbackProcessors.get(1);
         if (delimiter == null) {
             asyncTrackProcessor = new AsyncTrackProcessor(routeContext.getCamelContext(), expression, callbackEndpointExpression,
-                    aggregatorIdExpression, trackIdExtractor, asyncCallbackRecipientList, threadPool, shutdownThreadPool, recipientList);
+                    aggregatorIdExpression, callbackUrlAppender, asyncAckExtractor, asyncCallbackRecipientList, threadPool, shutdownThreadPool, recipientList);
         } else {
             asyncTrackProcessor = new AsyncTrackProcessor(routeContext.getCamelContext(), expression, delimiter,
-                    callbackEndpointExpression, aggregatorIdExpression, trackIdExtractor, asyncCallbackRecipientList, threadPool,
+                    callbackEndpointExpression, aggregatorIdExpression, callbackUrlAppender, asyncAckExtractor, asyncCallbackRecipientList, threadPool,
                     shutdownThreadPool, recipientList);
         }
         processors.set(1, asyncTrackProcessor);

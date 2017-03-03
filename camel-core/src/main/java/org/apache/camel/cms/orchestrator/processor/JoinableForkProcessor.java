@@ -7,6 +7,7 @@ import org.apache.camel.cms.orchestrator.utils.ForkUtils;
 import org.apache.camel.cms.orchestrator.exception.NoRequestIdPresentException;
 import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
 import org.apache.camel.cms.orchestrator.utils.PlatformContext;
+import org.apache.camel.cms.orchestrator.utils.PlatformUtils;
 import org.apache.camel.processor.RecipientList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 public class JoinableForkProcessor extends RecipientList {
 
     private static final Logger LOG = LoggerFactory.getLogger(JoinableForkProcessor.class);
+    private static final String LAST_FORK_CHILD_HEADER = "X-LastForkChildHeader";
 
     protected AggregateStore aggregateStore;
 
@@ -53,6 +55,7 @@ public class JoinableForkProcessor extends RecipientList {
 
     private void preProcess(Exchange exchange) throws IOException, NoRequestIdPresentException {
         String routeId = ForkUtils.getRouteId(exchange);
+        // =================== Relevant only for first fork of the route clean up
         PlatformContext platformContext = exchange.getProperty(OrchestratorConstants.PLATFORM_CONTEXT_PROPERTY, PlatformContext.class);
         synchronized (platformContext) {
             if (platformContext.isRoutesFirstFork()) {
@@ -60,12 +63,20 @@ public class JoinableForkProcessor extends RecipientList {
                 platformContext.markForkDone();
             }
         }
+        // ===================
+        String childId = exchange.getUnitOfWork().getOriginalInMessage().getHeader(LAST_FORK_CHILD_HEADER, String.class);
+        if (childId != null) {
+            aggregateStore.clear(ForkUtils.getRequestId(exchange), childId, routeId);
+        }
         ForkUtils.createChild(exchange);
+        childId = PlatformUtils.getRequestId(exchange);
+        exchange.getUnitOfWork().getOriginalInMessage().setHeader(LAST_FORK_CHILD_HEADER, childId);
         aggregateStore.fork(ForkUtils.getParentRequestId(exchange), ForkUtils.getRequestId(exchange), routeId);
     }
 
     private void postProcess(Exchange exchange) throws NoRequestIdPresentException {
         ForkUtils.revertBackToParent(exchange);
+        exchange.getUnitOfWork().getOriginalInMessage().removeHeader(LAST_FORK_CHILD_HEADER);
     }
 
     @Override

@@ -59,7 +59,7 @@ public class WaitForChildrenProcessor extends org.apache.camel.processor.Recipie
         String aggregatorId = aggregatorIdExpression.evaluate(exchange, String.class);
         String callbackEndpoint = callbackEndpointExpression.evaluate(exchange, String.class);
         byte[] rawPayload = ByteUtils.getByteArrayFromPayload(getCamelContext().getTypeConverterRegistry(), payload);
-        boolean isJoinable = aggregateStore.joinWithWait(requestId, callbackEndpoint, rawPayload, aggregatorId);
+        boolean isJoinable = aggregateStore.joinWithWait(requestId, callbackEndpoint, rawPayload, aggregatorId, exchange.getFromRouteId());
         if (isJoinable) {
             LOG.info("Parent request ID is now joinable " + requestId);
             exchange.getIn().setBody(requestId.getBytes());

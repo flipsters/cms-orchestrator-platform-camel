@@ -18,6 +18,8 @@ package org.apache.camel.model;
 
 import org.apache.camel.*;
 import org.apache.camel.builder.*;
+import org.apache.camel.cms.orchestrator.aggregator.AsyncAckExtractor;
+import org.apache.camel.cms.orchestrator.aggregator.CallbackUrlAppender;
 import org.apache.camel.cms.orchestrator.aggregator.TrackIdExtractor;
 import org.apache.camel.cms.orchestrator.definition.*;
 import org.apache.camel.cms.orchestrator.factory.AsyncCallbackFactory;
@@ -1451,17 +1453,17 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
     }
 
     public AsyncTrackDefinition<Type> asyncTrack(Expression externalEndpoint, Expression callbackEndpointExpression,
-                                                 Expression aggregatorIdExpression, TrackIdExtractor trackIdExtractor) {
+                                                 Expression aggregatorIdExpression, CallbackUrlAppender callbackUrlAppender, AsyncAckExtractor asyncAckExtractor) {
         RecipientListDefinition asyncCallbackDefinition = new RecipientListDefinition(simple(AsyncCallbackFactory.getCallbackEndpoint()));
-        AsyncTrackDefinition<Type> answer = new AsyncTrackDefinition(externalEndpoint, callbackEndpointExpression, aggregatorIdExpression,
-                trackIdExtractor, asyncCallbackDefinition);
+        AsyncTrackDefinition<Type> answer = new AsyncTrackDefinition(externalEndpoint, callbackEndpointExpression, aggregatorIdExpression, callbackUrlAppender,
+                asyncAckExtractor, asyncCallbackDefinition);
         addOutput(answer);
         return answer;
     }
 
-    public AsyncTrackDefinition<Type> asyncTrack(String externalEndpoint, String callbackEndpoint, String aggregatorId,
-                                                 TrackIdExtractor trackIdExtractor) {
-        return asyncTrack(simple(externalEndpoint), simple(callbackEndpoint), simple(aggregatorId), trackIdExtractor);
+    public AsyncTrackDefinition<Type> asyncTrack(String externalEndpoint, String callbackEndpoint, String aggregatorId, CallbackUrlAppender callbackUrlAppender,
+                                                 AsyncAckExtractor asyncAckExtractor) {
+        return asyncTrack(simple(externalEndpoint), simple(callbackEndpoint), simple(aggregatorId), callbackUrlAppender, asyncAckExtractor);
     }
 
     /**

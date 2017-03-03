@@ -18,6 +18,10 @@ public class PlatformUtils {
         return ForkUtils.getRequestId(exchange);
     }
 
+    public static String getTenantId(Exchange exchange) {
+        return exchange.getIn().getHeader(OrchestratorConstants.TENANT_ID_HEADER, String.class);
+    }
+
     public static String getParentRequestId(Exchange exchange) {
         return ForkUtils.getParentRequestId(exchange);
     }

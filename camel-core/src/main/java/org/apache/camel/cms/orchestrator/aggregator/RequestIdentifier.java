@@ -11,4 +11,10 @@ import lombok.Data;
 public class RequestIdentifier {
     String requestId;
     String tenantId;
+
+    private static final RequestIdentifier NO_VISIBILITY_REQ_ID = new RequestIdentifier(null, null);
+
+    public static RequestIdentifier noVisibilityReqId() {
+        return NO_VISIBILITY_REQ_ID;
+    }
 }

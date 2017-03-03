@@ -117,7 +117,8 @@ public class InMemoryAggregateStore implements AggregateStore {
     }
 
     @Override
-    public boolean joinWithWait(String parentId, String endpoint, byte[] payload, String aggregatorId) throws IOException, SynchronisedOperationException {
+    public boolean joinWithWait(String parentId, String endpoint, byte[] payload,
+                                String aggregatorId, String routeId) throws IOException, SynchronisedOperationException {
         payloadMap.put(parentId, payload);
         return isJoinable(parentId);
     }
@@ -143,6 +144,10 @@ public class InMemoryAggregateStore implements AggregateStore {
                 payloadMap.remove(parentId + childId);
             }
         }
+    }
+
+    @Override
+    public void clear(String parentId, String childId, String forkRoute) throws IOException {
     }
 
     @Override

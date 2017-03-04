@@ -6,6 +6,7 @@ import flipkart.cms.orchestrator.status.store.model.RequestMap;
 import org.apache.camel.*;
 import org.apache.camel.cms.orchestrator.aggregator.*;
 import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
+import org.apache.camel.cms.orchestrator.factory.StatusStoreFactory;
 import org.apache.camel.cms.orchestrator.utils.ByteUtils;
 import org.apache.camel.cms.orchestrator.utils.PlatformUtils;
 import org.apache.camel.processor.RecipientList;
@@ -60,6 +61,7 @@ public class AsyncTrackProcessor extends RecipientList {
         this.callbackUrlAppender = callbackUrlAppender;
         this.asyncCallbackRecipientList = asyncCallbackRecipientList;
         aggregateStore = AggregateStoreFactory.getStoreInstance();
+        statusStoreService = StatusStoreFactory.getStoreInstance();
     }
 
     @Override

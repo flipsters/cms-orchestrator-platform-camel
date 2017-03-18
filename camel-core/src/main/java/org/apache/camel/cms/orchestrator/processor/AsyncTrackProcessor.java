@@ -1,19 +1,24 @@
 package org.apache.camel.cms.orchestrator.processor;
 
 import flipkart.cms.aggregator.client.AggregateStore;
-import flipkart.cms.orchestrator.status.store.api.StatusStoreService;
-import flipkart.cms.orchestrator.status.store.model.RequestMap;
-import org.apache.camel.*;
-import org.apache.camel.cms.orchestrator.aggregator.*;
+import flipkart.cms.aggregator.client.MappingStore;
+import flipkart.cms.aggregator.model.RequestMap;
+import org.apache.camel.AsyncCallback;
+import org.apache.camel.CamelContext;
+import org.apache.camel.Exchange;
+import org.apache.camel.Expression;
+import org.apache.camel.cms.orchestrator.aggregator.AsyncAckExtractor;
+import org.apache.camel.cms.orchestrator.aggregator.CallbackUrlAppender;
+import org.apache.camel.cms.orchestrator.aggregator.Payload;
+import org.apache.camel.cms.orchestrator.aggregator.RequestIdentifier;
 import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
-import org.apache.camel.cms.orchestrator.factory.StatusStoreFactory;
+import org.apache.camel.cms.orchestrator.factory.MappingStoreFactory;
 import org.apache.camel.cms.orchestrator.utils.ByteUtils;
 import org.apache.camel.cms.orchestrator.utils.PlatformUtils;
 import org.apache.camel.processor.RecipientList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -29,7 +34,7 @@ public class AsyncTrackProcessor extends RecipientList {
     private CallbackUrlAppender callbackUrlAppender;
     private RecipientList asyncCallbackRecipientList;
     private AggregateStore aggregateStore;
-    private StatusStoreService statusStoreService;
+    private MappingStore mappingStore;
 
     public AsyncTrackProcessor(CamelContext camelContext, Expression expression, Expression callbackEndpointExpression,
                                Expression aggregatorIdExpression, CallbackUrlAppender callbackUrlAppender, AsyncAckExtractor asyncAckExtractor,
@@ -61,7 +66,7 @@ public class AsyncTrackProcessor extends RecipientList {
         this.callbackUrlAppender = callbackUrlAppender;
         this.asyncCallbackRecipientList = asyncCallbackRecipientList;
         aggregateStore = AggregateStoreFactory.getStoreInstance();
-        statusStoreService = StatusStoreFactory.getStoreInstance();
+        mappingStore = MappingStoreFactory.getStoreInstance();
     }
 
     @Override
@@ -89,7 +94,6 @@ public class AsyncTrackProcessor extends RecipientList {
 
     private boolean preProcess(String requestId, Payload originalPayload, Exchange exchange, String trackId, String tenantId) throws Exception {
         LOG.info("Extracting track ID for request ID " + requestId);
-//        String trackId = asyncAckExtractor.getTrackId(exchange);
         RequestIdentifier requestIdentifier = asyncAckExtractor.getRequestIdentifier(exchange);
         String externalRequestId = requestIdentifier.getRequestId();
         String externalTenantId = requestIdentifier.getTenantId();
@@ -99,7 +103,7 @@ public class AsyncTrackProcessor extends RecipientList {
         String callbackEndpoint = callbackEndpointExpression.evaluate(exchange, String.class);
         byte[] rawPayload = ByteUtils.getByteArrayFromPayload(getCamelContext().getTypeConverterRegistry(), originalPayload);
         boolean isResumable = aggregateStore.createAsync(trackId, callbackEndpoint, rawPayload, aggregatorId);
-        statusStoreService.putRequestMap(new RequestMap(trackId, requestId, tenantId, externalRequestId, externalTenantId));
+        mappingStore.putRequestMap(new RequestMap(requestId, externalTenantId, externalRequestId, trackId));
         if (isResumable) {
             LOG.info("Track ID " + trackId + " with request ID " + requestId +  " is now resumable");
             exchange.getIn().setBody(trackId.getBytes());

@@ -1,8 +1,7 @@
 package org.apache.camel.cms.orchestrator.factory;
 
-import flipkart.cms.aggregator.client.AggregateStore;
-import flipkart.cms.orchestrator.status.store.api.StatusStoreService;
-import org.apache.camel.cms.orchestrator.exception.AggregateStoreInitializationException;
+import flipkart.cms.aggregator.client.StatusStore;
+import org.apache.camel.cms.orchestrator.exception.StatusStoreInitializationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,19 +11,19 @@ import org.slf4j.LoggerFactory;
 public class StatusStoreFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(StatusStoreFactory.class);
-    private static StatusStoreService STORE_INSTANCE = null;
+    private static StatusStore STORE_INSTANCE = null;
 
-    public static void registerStore(StatusStoreService statusStoreService)
+    public static void registerStore(StatusStore statusStore)
     {
         if(STORE_INSTANCE!=null)
         {
             LOG.error("Status Store is already registered");
-            throw new AggregateStoreInitializationException("Status Store is already registered");
+            throw new StatusStoreInitializationException("Status Store is already registered");
         }
-        STORE_INSTANCE = statusStoreService;
+        STORE_INSTANCE = statusStore;
     }
 
-    public static StatusStoreService getStoreInstance() {
+    public static StatusStore getStoreInstance() {
         return STORE_INSTANCE;
     }
 }

@@ -1,15 +1,13 @@
 package org.apache.camel.cms.orchestrator.processor;
 
-import flipkart.cms.orchestrator.status.store.api.StatusStoreService;
-import flipkart.cms.orchestrator.status.store.model.Status;
+import flipkart.cms.aggregator.client.StatusStore;
+import flipkart.cms.aggregator.model.Status;
 import org.apache.camel.*;
-import org.apache.camel.cms.orchestrator.exception.StatusStoreException;
+import org.apache.camel.cms.orchestrator.OrchestratorConstants;
 import org.apache.camel.cms.orchestrator.factory.StatusStoreFactory;
 import org.apache.camel.cms.orchestrator.utils.PlatformUtils;
-import org.apache.camel.processor.SendProcessor;
 import org.apache.camel.support.ServiceSupport;
 import org.apache.camel.util.AsyncProcessorHelper;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,11 +19,11 @@ public class StatusProcessor extends ServiceSupport implements AsyncProcessor, T
     private static final Logger LOG = LoggerFactory.getLogger(StatusProcessor.class);
 
     private final Expression expression;
-    private final StatusStoreService statusStoreService;
+    private final StatusStore statusStore;
 
     public StatusProcessor(Expression expression) {
         this.expression = expression;
-        statusStoreService = StatusStoreFactory.getStoreInstance();
+        statusStore = StatusStoreFactory.getStoreInstance();
     }
 
     public void process(Exchange exchange) throws Exception {
@@ -38,14 +36,15 @@ public class StatusProcessor extends ServiceSupport implements AsyncProcessor, T
             String message = expression.evaluate(exchange, String.class);
             String requestId = PlatformUtils.getRequestId(exchange);
             String parentRequestId = PlatformUtils.getParentRequestId(exchange);
-            Status.StatusBuilder statusBuilder = Status.builder().state(message).requestId(requestId);
-            if (StringUtils.isNotEmpty(parentRequestId)) {
-                statusBuilder = statusBuilder.parentId(parentRequestId);
-            }
+            Integer statusCounter = PlatformUtils.getStatusCounter(exchange);
+            String requestPath = PlatformUtils.getRequestPath(exchange);
+            Status.StatusBuilder statusBuilder = Status.builder().status(message).requestId(requestId)
+                .counter(statusCounter).parentRequestId(parentRequestId).requestPath(requestPath);
             Status status = statusBuilder.build();
-            if (!statusStoreService.putStatus(status)) {
-                throw new StatusStoreException("Error persisting to status store");
+            if (!statusStore.putStatus(status)) {
+                LOG.info("Not able to update the status due to version mis-match");
             }
+            exchange.getIn().setHeader(OrchestratorConstants.STATUS_COUNTER, statusCounter + 1);
         } catch (Exception e) {
             LOG.error("Failed to push status for " + exchange.getIn().getHeaders(), e);
             exchange.setException(e);

@@ -44,6 +44,7 @@ public class ForkUtils {
             parentRequestIdStack = Arrays.copyOfRange(parentRequestIdStack, 1, parentRequestIdStack.length);
             parentRequestIdStackStr = StringUtils.join(parentRequestIdStack, OrchestratorConstants.PARENT_REQUEST_ID_DELIM);
         }
+        exchange.getIn().setHeader(OrchestratorConstants.STATUS_COUNTER, exchange.getIn().removeHeader(OrchestratorConstants.PARENT_STATUS_COUNTER));
         exchange.getIn().setHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER, parentRequestIdStackStr);
     }
 
@@ -61,6 +62,7 @@ public class ForkUtils {
         } else {
             parentIdStack = requestId + OrchestratorConstants.PARENT_REQUEST_ID_DELIM + parentIdStack;
         }
+        exchange.getIn().setHeader(OrchestratorConstants.PARENT_STATUS_COUNTER, exchange.getIn().removeHeader(OrchestratorConstants.STATUS_COUNTER));
         exchange.getIn().setHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER, parentIdStack);
         exchange.getIn().setHeader(OrchestratorConstants.REQUEST_ID_HEADER, childId);
     }

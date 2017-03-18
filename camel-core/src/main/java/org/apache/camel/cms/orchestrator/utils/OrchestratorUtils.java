@@ -18,6 +18,8 @@ public class OrchestratorUtils {
     headers.add(OrchestratorConstants.TRACK_ID_HEADER);
     headers.add(OrchestratorConstants.TENANT_ID_HEADER);
     headers.add(OrchestratorConstants.PIPELINE_HANDLE_HEADER);
+    headers.add(OrchestratorConstants.STATUS_COUNTER);
+    headers.add(OrchestratorConstants.PARENT_STATUS_COUNTER);
     return headers;
   }
 

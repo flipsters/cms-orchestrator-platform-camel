@@ -31,4 +31,13 @@ public class PlatformUtils {
             properties.put(OrchestratorConstants.PLATFORM_CONTEXT_PROPERTY, new PlatformContext());
         }
     }
+
+    public static String requestIdStack(Exchange exchange) {
+        String requestId = getRequestId(exchange);
+        String parentIdStack = exchange.getIn().getHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER, String.class);
+        if (StringUtils.isEmpty(parentIdStack)) {
+            return requestId;
+        }
+        return requestId + OrchestratorConstants.PARENT_REQUEST_ID_DELIM + parentIdStack;
+    }
 }

@@ -37,7 +37,7 @@ public class JoinableForkProcessor extends RecipientList {
         setParallelProcessing(recipientList.isParallelProcessing());
         setParallelAggregate(recipientList.isParallelAggregate());
         setStreaming(recipientList.isStreaming());
-        setShareUnitOfWork(recipientList.isShareUnitOfWork());
+        setShareUnitOfWork(true); // Force setting
         setStopOnException(recipientList.isStopOnException());
         setIgnoreInvalidEndpoints(recipientList.isIgnoreInvalidEndpoints());
         setCacheSize(recipientList.getCacheSize());

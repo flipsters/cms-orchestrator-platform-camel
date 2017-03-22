@@ -52,7 +52,7 @@ public class AsyncTrackProcessor extends RecipientList {
         setParallelProcessing(recipientList.isParallelProcessing());
         setParallelAggregate(recipientList.isParallelAggregate());
         setStreaming(recipientList.isStreaming());
-        setShareUnitOfWork(recipientList.isShareUnitOfWork());
+        setShareUnitOfWork(true); // Force setting
         setStopOnException(recipientList.isStopOnException());
         setIgnoreInvalidEndpoints(recipientList.isIgnoreInvalidEndpoints());
         setCacheSize(recipientList.getCacheSize());
@@ -92,7 +92,7 @@ public class AsyncTrackProcessor extends RecipientList {
         return "AsyncTrack(" + callbackEndpointExpression + ", " + aggregatorIdExpression + ", " + super.toString() + ")";
     }
 
-    private boolean preProcess(String requestId, Payload originalPayload, Exchange exchange, String trackId, String tenantId) throws Exception {
+    private boolean postProcess(String requestId, Payload originalPayload, Exchange exchange, String trackId, String tenantId) throws Exception {
         LOG.info("Extracting track ID for request ID " + requestId);
         RequestIdentifier requestIdentifier = asyncAckExtractor.getRequestIdentifier(exchange);
         String externalRequestId = requestIdentifier.getRequestId();
@@ -118,9 +118,11 @@ public class AsyncTrackProcessor extends RecipientList {
         Payload originalPayload = ByteUtils.createPayload(exchange);
         String trackId = callbackUrlAppender.mergeCallback(exchange);
         super.process(exchange);
-        boolean isResumable = preProcess(requestId, originalPayload, exchange, trackId, tentantId);
-        if (isResumable) {
-            asyncCallbackRecipientList.process(exchange);
+        if (exchange.getException() == null) {
+            boolean isResumable = postProcess(requestId, originalPayload, exchange, trackId, tentantId);
+            if (isResumable) {
+                asyncCallbackRecipientList.process(exchange);
+            }
         }
     }
 
@@ -132,7 +134,7 @@ public class AsyncTrackProcessor extends RecipientList {
             Payload originalPayload = ByteUtils.createPayload(exchange);
             String trackId = callbackUrlAppender.mergeCallback(exchange);
             super.process(exchange, callback);
-            boolean isResumable = preProcess(requestId, originalPayload, exchange, trackId, tentantId);
+            boolean isResumable = postProcess(requestId, originalPayload, exchange, trackId, tentantId);
             if (isResumable) {
                 asyncCallbackRecipientList.process(exchange);
             }

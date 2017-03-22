@@ -42,7 +42,7 @@ public class StatusProcessor extends ServiceSupport implements AsyncProcessor, T
                 .counter(statusCounter).parentRequestId(parentRequestId).requestPath(requestPath);
             Status status = statusBuilder.build();
             if (!statusStore.putStatus(status)) {
-                LOG.info("Not able to update the status due to version mis-match for request id : " + requestId + " anf counter : " + statusCounter);
+                LOG.info("Not able to update the status due to version mis-match for request id : " + requestId + " and counter : " + statusCounter);
             }
             exchange.getIn().setHeader(OrchestratorConstants.STATUS_COUNTER, statusCounter + 1);
         } catch (Exception e) {

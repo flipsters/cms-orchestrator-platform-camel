@@ -133,12 +133,14 @@ public class AsyncTrackProcessor extends RecipientList {
             String tentantId = PlatformUtils.getTenantId(exchange);
             Payload originalPayload = ByteUtils.createPayload(exchange);
             String trackId = callbackUrlAppender.mergeCallback(exchange);
-            super.process(exchange, callback);
-            boolean isResumable = postProcess(requestId, originalPayload, exchange, trackId, tentantId);
-            if (isResumable) {
-                asyncCallbackRecipientList.process(exchange);
+            boolean process = super.process(exchange, callback);
+            if (exchange.getException() == null) {
+                boolean isResumable = postProcess(requestId, originalPayload, exchange, trackId, tentantId);
+                if (isResumable) {
+                    asyncCallbackRecipientList.process(exchange);
+                }
             }
-            return true;
+            return process;
         } catch (Exception e) {
             LOG.error("Failed to do async track for " + exchange.getIn().getHeaders(), e);
             exchange.setException(e);

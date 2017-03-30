@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutorService;
 
+import static org.apache.camel.cms.orchestrator.OrchestratorConstants.PARENT_REQUEST_ID_DELIM;
+
 /**
  * Created by kartik.bommepally on 10/01/17.
  */
@@ -40,7 +42,7 @@ public class AsyncTrackProcessor extends RecipientList {
                                Expression aggregatorIdExpression, CallbackUrlAppender callbackUrlAppender, AsyncAckExtractor asyncAckExtractor,
                                RecipientList asyncCallbackRecipientList, ExecutorService threadPool, boolean shutdownThreadPool,
                                RecipientList recipientList) {
-        this(camelContext, expression, ",", callbackEndpointExpression, aggregatorIdExpression, callbackUrlAppender, asyncAckExtractor,
+        this(camelContext, expression, PARENT_REQUEST_ID_DELIM, callbackEndpointExpression, aggregatorIdExpression, callbackUrlAppender, asyncAckExtractor,
                 asyncCallbackRecipientList, threadPool, shutdownThreadPool, recipientList);
     }
 

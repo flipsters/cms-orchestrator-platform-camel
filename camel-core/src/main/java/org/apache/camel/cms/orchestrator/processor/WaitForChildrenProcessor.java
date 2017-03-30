@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutorService;
 
+import static org.apache.camel.cms.orchestrator.OrchestratorConstants.PARENT_REQUEST_ID_DELIM;
+
 /**
  * Created by kartik.bommepally on 10/01/17.
  */
@@ -25,7 +27,7 @@ public class WaitForChildrenProcessor extends org.apache.camel.processor.Recipie
 
     public WaitForChildrenProcessor(CamelContext camelContext, Expression expression, Expression aggregatorIdExpression, Expression callbackEndpointExpression,
                                     ExecutorService threadPool, boolean shutdownThreadPool, RecipientList recipientList) {
-        this(camelContext, expression, ",", aggregatorIdExpression, callbackEndpointExpression, threadPool, shutdownThreadPool, recipientList);
+        this(camelContext, expression, PARENT_REQUEST_ID_DELIM, aggregatorIdExpression, callbackEndpointExpression, threadPool, shutdownThreadPool, recipientList);
     }
 
     public WaitForChildrenProcessor(CamelContext camelContext, Expression expression, String delimiter, Expression aggregatorIdExpression,

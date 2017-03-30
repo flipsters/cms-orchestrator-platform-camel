@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutorService;
 
+import static org.apache.camel.cms.orchestrator.OrchestratorConstants.PARENT_REQUEST_ID_DELIM;
+
 /**
  * Created by achit.ojha on 08/01/17.
  */
@@ -17,7 +19,7 @@ public class ForkProcessor extends RecipientList {
 
     public ForkProcessor(CamelContext camelContext, Expression expression, ExecutorService threadPool,
                          boolean shutdownThreadPool, RecipientList recipientList) {
-        this(camelContext, expression, ",", threadPool, shutdownThreadPool, recipientList);
+        this(camelContext, expression, PARENT_REQUEST_ID_DELIM, threadPool, shutdownThreadPool, recipientList);
     }
 
     public ForkProcessor(CamelContext camelContext, Expression expression, String delimiter, ExecutorService threadPool,

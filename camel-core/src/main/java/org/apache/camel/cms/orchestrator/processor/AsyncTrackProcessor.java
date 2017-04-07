@@ -1,7 +1,9 @@
 package org.apache.camel.cms.orchestrator.processor;
 
 import flipkart.cms.aggregator.client.AggregateStore;
+import flipkart.cms.aggregator.client.ExpiryStore;
 import flipkart.cms.aggregator.client.MappingStore;
+import flipkart.cms.aggregator.model.ExpiryEntry;
 import flipkart.cms.aggregator.model.RequestMap;
 import org.apache.camel.AsyncCallback;
 import org.apache.camel.CamelContext;
@@ -12,6 +14,7 @@ import org.apache.camel.cms.orchestrator.aggregator.CallbackUrlAppender;
 import org.apache.camel.cms.orchestrator.aggregator.Payload;
 import org.apache.camel.cms.orchestrator.aggregator.RequestIdentifier;
 import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
+import org.apache.camel.cms.orchestrator.factory.ExpiryStoreFactory;
 import org.apache.camel.cms.orchestrator.factory.MappingStoreFactory;
 import org.apache.camel.cms.orchestrator.utils.ByteUtils;
 import org.apache.camel.cms.orchestrator.utils.PlatformUtils;
@@ -37,18 +40,20 @@ public class AsyncTrackProcessor extends RecipientList {
     private RecipientList asyncCallbackRecipientList;
     private AggregateStore aggregateStore;
     private MappingStore mappingStore;
+    private ExpiryStore expiryStore;
+    private Long expiryBreachTime;
 
     public AsyncTrackProcessor(CamelContext camelContext, Expression expression, Expression callbackEndpointExpression,
                                Expression aggregatorIdExpression, CallbackUrlAppender callbackUrlAppender, AsyncAckExtractor asyncAckExtractor,
                                RecipientList asyncCallbackRecipientList, ExecutorService threadPool, boolean shutdownThreadPool,
-                               RecipientList recipientList) {
+                               RecipientList recipientList, Long expiryBreachTime) {
         this(camelContext, expression, PARENT_REQUEST_ID_DELIM, callbackEndpointExpression, aggregatorIdExpression, callbackUrlAppender, asyncAckExtractor,
-                asyncCallbackRecipientList, threadPool, shutdownThreadPool, recipientList);
+                asyncCallbackRecipientList, threadPool, shutdownThreadPool, recipientList, expiryBreachTime);
     }
 
     public AsyncTrackProcessor(CamelContext camelContext, Expression expression, String delimiter, Expression callbackEndpointExpression,
                                Expression aggregatorIdExpression, CallbackUrlAppender callbackUrlAppender, AsyncAckExtractor asyncAckExtractor, RecipientList asyncCallbackRecipientList,
-                               ExecutorService threadPool, boolean shutdownThreadPool, RecipientList recipientList) {
+                               ExecutorService threadPool, boolean shutdownThreadPool, RecipientList recipientList, Long expiryBreachTime) {
         super(camelContext, expression, delimiter);
         setAggregationStrategy(recipientList.getAggregationStrategy());
         setParallelProcessing(recipientList.isParallelProcessing());
@@ -67,8 +72,10 @@ public class AsyncTrackProcessor extends RecipientList {
         this.asyncAckExtractor = asyncAckExtractor;
         this.callbackUrlAppender = callbackUrlAppender;
         this.asyncCallbackRecipientList = asyncCallbackRecipientList;
+        this.expiryBreachTime = expiryBreachTime;
         aggregateStore = AggregateStoreFactory.getStoreInstance();
         mappingStore = MappingStoreFactory.getStoreInstance();
+        expiryStore = ExpiryStoreFactory.getStoreInstance(expiryBreachTime);
     }
 
     @Override
@@ -119,6 +126,8 @@ public class AsyncTrackProcessor extends RecipientList {
         String tentantId = PlatformUtils.getTenantId(exchange);
         Payload originalPayload = ByteUtils.createPayload(exchange);
         String trackId = callbackUrlAppender.mergeCallback(exchange);
+        ExpiryEntry expiryEntry = new ExpiryEntry(expiryBreachTime, trackId, requestId);
+        expiryStore.putExpiry(expiryEntry);
         super.process(exchange);
         if (exchange.getException() == null) {
             boolean isResumable = postProcess(requestId, originalPayload, exchange, trackId, tentantId);

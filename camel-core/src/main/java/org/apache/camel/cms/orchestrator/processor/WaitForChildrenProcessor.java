@@ -1,6 +1,7 @@
 package org.apache.camel.cms.orchestrator.processor;
 
 import flipkart.cms.aggregator.client.AggregateStore;
+import flipkart.cms.aggregator.model.JoinResponse;
 import org.apache.camel.*;
 import org.apache.camel.cms.orchestrator.aggregator.Payload;
 import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.ExecutorService;
 
 import static org.apache.camel.cms.orchestrator.OrchestratorConstants.PARENT_REQUEST_ID_DELIM;
+import static org.apache.camel.cms.orchestrator.OrchestratorConstants.ROUTE_JOIN_ID;
 
 /**
  * Created by kartik.bommepally on 10/01/17.
@@ -61,10 +63,12 @@ public class WaitForChildrenProcessor extends org.apache.camel.processor.Recipie
         String aggregatorId = aggregatorIdExpression.evaluate(exchange, String.class);
         String callbackEndpoint = callbackEndpointExpression.evaluate(exchange, String.class);
         byte[] rawPayload = ByteUtils.getByteArrayFromPayload(getCamelContext().getTypeConverterRegistry(), payload);
-        boolean isJoinable = aggregateStore.joinWithWait(requestId, callbackEndpoint, rawPayload, aggregatorId, exchange.getFromRouteId());
+        JoinResponse joinResponse = aggregateStore.joinWithWait(requestId, callbackEndpoint, rawPayload, aggregatorId, exchange.getFromRouteId());
+        boolean isJoinable = joinResponse.isJoinable();
         if (isJoinable) {
             LOG.info("Parent request ID is now joinable " + requestId);
             exchange.getIn().setBody(requestId.getBytes());
+            exchange.getIn().setHeader(ROUTE_JOIN_ID, joinResponse.getRouteId());
         }
         return isJoinable;
     }

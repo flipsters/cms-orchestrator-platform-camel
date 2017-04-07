@@ -15,4 +15,5 @@ public class OrchestratorConstants {
     public static final String PLATFORM_CONTEXT_PROPERTY = "X-PlatformContext";
     public static final String STATUS_COUNTER = "X-StatusCounter";
     public static final String PARENT_STATUS_COUNTER = "X-ParentStatusCounter";
+    public static final String ROUTE_JOIN_ID = "X-RouteJoinId";
 }

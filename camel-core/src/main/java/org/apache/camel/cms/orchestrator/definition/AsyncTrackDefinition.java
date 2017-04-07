@@ -48,15 +48,25 @@ public class AsyncTrackDefinition<Type extends ProcessorDefinition<Type>> extend
     @XmlAttribute(required = true)
     private RecipientListDefinition<Type> asyncCallbackDefinition;
 
+    @XmlAttribute(required = true)
+    private Long expiryBreachTime;
+
     public AsyncTrackDefinition(Expression externalEndpoint, Expression callbackEndpointExpression,
                                 Expression aggregatorIdExpression, CallbackUrlAppender callbackUrlAppender, AsyncAckExtractor asyncAckExtractor,
-                                RecipientListDefinition<Type> asyncCallbackDefinition) {
+                                RecipientListDefinition<Type> asyncCallbackDefinition, Long expiryBreachTime) {
         super(externalEndpoint);
         this.callbackEndpointExpression = callbackEndpointExpression;
         this.aggregatorIdExpression = aggregatorIdExpression;
         this.callbackUrlAppender = callbackUrlAppender;
         this.asyncAckExtractor = asyncAckExtractor;
         this.asyncCallbackDefinition = asyncCallbackDefinition;
+        this.expiryBreachTime = expiryBreachTime;
+    }
+
+    public AsyncTrackDefinition(Expression externalEndpoint, Expression callbackEndpointExpression,
+                                Expression aggregatorIdExpression, CallbackUrlAppender callbackUrlAppender, AsyncAckExtractor asyncAckExtractor,
+                                RecipientListDefinition<Type> asyncCallbackDefinition) {
+        this(externalEndpoint, callbackEndpointExpression, aggregatorIdExpression, callbackUrlAppender, asyncAckExtractor, asyncCallbackDefinition, null);
     }
 
     @Override
@@ -90,11 +100,11 @@ public class AsyncTrackDefinition<Type extends ProcessorDefinition<Type>> extend
         RecipientList asyncCallbackRecipientList = (RecipientList) asyncCallbackProcessors.get(1);
         if (delimiter == null) {
             asyncTrackProcessor = new AsyncTrackProcessor(routeContext.getCamelContext(), expression, callbackEndpointExpression,
-                    aggregatorIdExpression, callbackUrlAppender, asyncAckExtractor, asyncCallbackRecipientList, threadPool, shutdownThreadPool, recipientList);
+                    aggregatorIdExpression, callbackUrlAppender, asyncAckExtractor, asyncCallbackRecipientList, threadPool, shutdownThreadPool, recipientList, expiryBreachTime);
         } else {
             asyncTrackProcessor = new AsyncTrackProcessor(routeContext.getCamelContext(), expression, delimiter,
                     callbackEndpointExpression, aggregatorIdExpression, callbackUrlAppender, asyncAckExtractor, asyncCallbackRecipientList, threadPool,
-                    shutdownThreadPool, recipientList);
+                    shutdownThreadPool, recipientList, expiryBreachTime);
         }
         processors.set(1, asyncTrackProcessor);
         return Pipeline.newInstance(pipeline.getCamelContext(), processors);

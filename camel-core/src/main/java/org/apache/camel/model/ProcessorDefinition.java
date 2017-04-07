@@ -1461,9 +1461,23 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
         return answer;
     }
 
+    public AsyncTrackDefinition<Type> asyncTrack(Expression externalEndpoint, Expression callbackEndpointExpression,
+                                                 Expression aggregatorIdExpression, CallbackUrlAppender callbackUrlAppender, AsyncAckExtractor asyncAckExtractor, Long expiryBreachTime) {
+        RecipientListDefinition asyncCallbackDefinition = new RecipientListDefinition(simple(AsyncCallbackFactory.getCallbackEndpoint()));
+        AsyncTrackDefinition<Type> answer = new AsyncTrackDefinition(externalEndpoint, callbackEndpointExpression, aggregatorIdExpression, callbackUrlAppender,
+            asyncAckExtractor, asyncCallbackDefinition, expiryBreachTime);
+        addOutput(answer);
+        return answer;
+    }
+
     public AsyncTrackDefinition<Type> asyncTrack(String externalEndpoint, String callbackEndpoint, String aggregatorId, CallbackUrlAppender callbackUrlAppender,
                                                  AsyncAckExtractor asyncAckExtractor) {
         return asyncTrack(simple(externalEndpoint), simple(callbackEndpoint), simple(aggregatorId), callbackUrlAppender, asyncAckExtractor);
+    }
+
+    public AsyncTrackDefinition<Type> asyncTrack(String externalEndpoint, String callbackEndpoint, String aggregatorId, CallbackUrlAppender callbackUrlAppender,
+                                                 AsyncAckExtractor asyncAckExtractor, Long expiryBreachTime) {
+        return asyncTrack(simple(externalEndpoint), simple(callbackEndpoint), simple(aggregatorId), callbackUrlAppender, asyncAckExtractor, expiryBreachTime);
     }
 
     /**

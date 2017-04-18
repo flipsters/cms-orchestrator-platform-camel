@@ -144,6 +144,8 @@ public class AsyncTrackProcessor extends RecipientList {
             String tentantId = PlatformUtils.getTenantId(exchange);
             Payload originalPayload = ByteUtils.createPayload(exchange);
             String trackId = callbackUrlAppender.mergeCallback(exchange);
+            ExpiryEntry expiryEntry = new ExpiryEntry(expiryBreachTime, trackId, requestId);
+            expiryStore.putExpiry(expiryEntry);
             boolean process = super.process(exchange, callback);
             if (exchange.getException() == null) {
                 boolean isResumable = postProcess(requestId, originalPayload, exchange, trackId, tentantId);

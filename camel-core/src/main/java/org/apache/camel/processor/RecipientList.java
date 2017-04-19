@@ -55,7 +55,7 @@ public class RecipientList extends ServiceSupport implements AsyncProcessor {
     private final CamelContext camelContext;
     private ProducerCache producerCache;
     private Expression expression;
-    private final String delimiter;
+    private String delimiter;
     private boolean parallelProcessing;
     private boolean parallelAggregate;
     private boolean stopOnException;
@@ -293,6 +293,11 @@ public class RecipientList extends ServiceSupport implements AsyncProcessor {
 
     public void setShareUnitOfWork(boolean shareUnitOfWork) {
         this.shareUnitOfWork = shareUnitOfWork;
+    }
+
+    public void setDelimiter(String delimiter) {
+        ObjectHelper.notEmpty(delimiter, "delimiter");
+        this.delimiter = delimiter;
     }
 
     public int getCacheSize() {

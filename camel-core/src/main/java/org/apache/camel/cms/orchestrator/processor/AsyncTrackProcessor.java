@@ -72,6 +72,8 @@ public class AsyncTrackProcessor extends RecipientList {
         this.asyncAckExtractor = asyncAckExtractor;
         this.callbackUrlAppender = callbackUrlAppender;
         this.asyncCallbackRecipientList = asyncCallbackRecipientList;
+        this.asyncCallbackRecipientList.setShareUnitOfWork(true); // Force setting
+        this.asyncCallbackRecipientList.setDelimiter(PARENT_REQUEST_ID_DELIM); // Force setting
         this.expiryBreachTime = expiryBreachTime;
         aggregateStore = AggregateStoreFactory.getStoreInstance();
         mappingStore = MappingStoreFactory.getStoreInstance();

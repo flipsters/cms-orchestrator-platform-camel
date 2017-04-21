@@ -25,6 +25,8 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.codahale.metrics.JmxReporter;
+import com.codahale.metrics.MetricRegistry;
 import kafka.consumer.ConsumerConfig;
 import kafka.consumer.ConsumerIterator;
 import kafka.consumer.ConsumerTimeoutException;
@@ -32,6 +34,7 @@ import kafka.consumer.KafkaStream;
 import kafka.javaapi.consumer.ConsumerConnector;
 import kafka.message.MessageAndMetadata;
 import kafka.serializer.Decoder;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.impl.DefaultConsumer;
@@ -42,9 +45,20 @@ import org.slf4j.LoggerFactory;
 /**
  *
  */
+@Slf4j
 public class KafkaConsumer extends DefaultConsumer {
 
-    private static final Logger LOG = LoggerFactory.getLogger(KafkaConsumer.class);
+    public static MetricRegistry metricRegistry = new MetricRegistry();
+    static {
+        final JmxReporter jmxReporter = JmxReporter.forRegistry(metricRegistry).build();
+        jmxReporter.start();
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                jmxReporter.stop();
+            }
+        });
+    }
 
     protected ExecutorService executor;
     private final KafkaEndpoint endpoint;
@@ -90,7 +104,7 @@ public class KafkaConsumer extends DefaultConsumer {
             if (endpoint.isAutoCommitEnable() != null && !endpoint.isAutoCommitEnable()) {
                 if ((endpoint.getConsumerTimeoutMs() == null || endpoint.getConsumerTimeoutMs() < 0)
                     && endpoint.getConsumerStreams() > 1) {
-                    LOG.warn("consumerTimeoutMs is set to -1 (infinite) while requested multiple consumer streams.");
+                    log.warn("consumerTimeoutMs is set to -1 (infinite) while requested multiple consumer streams.");
                 }
                 CyclicBarrier barrier = new CyclicBarrier(endpoint.getConsumerStreams(), new CommitOffsetTask(consumer));
                 for (final KafkaStream<byte[], byte[]> stream : streams) {
@@ -148,16 +162,20 @@ public class KafkaConsumer extends DefaultConsumer {
             ConsumerIterator<byte[], byte[]> it = stream.iterator();
             boolean hasNext = true;
             while (hasNext) {
+                long start = System.currentTimeMillis();
                 try {
                     consumerTimeout = false;
                     // only poll the next message if we are allowed to run and are not suspending
                     if (isRunAllowed() && !isSuspendingOrSuspended() && it.hasNext()) {
                         mm = it.next();
+                        metricRegistry.meter("org.apache.camel.component.kafka.KafkaConsumer.topic." + endpoint.getTopic() + ".consume.meter").mark();
                         Exchange exchange = endpoint.createKafkaExchange(mm);
                         try {
                             processor.process(exchange);
                         } catch (Exception e) {
-                            LOG.error(e.getMessage(), e);
+                            metricRegistry.meter("org.apache.camel.component.kafka.KafkaConsumer.topic." + endpoint.getTopic() + ".consume.exception").mark();
+                            metricRegistry.meter("org.apache.camel.component.kafka.KafkaConsumer.consume.exception").mark();
+                            log.error("Failed to process message from topic {}", endpoint.getTopic(), e);
                         }
                         processed++;
                     } else {
@@ -165,21 +183,34 @@ public class KafkaConsumer extends DefaultConsumer {
                         hasNext = false;
                     }
                 } catch (ConsumerTimeoutException e) {
-                    LOG.debug("Consumer timeout occurred due " + e.getMessage(), e);
+                    log.trace("Consumer timeout occurred for topic {}", endpoint.getTopic(), e);
                     consumerTimeout = true;
                 }
 
                 if (processed >= endpoint.getBatchSize() || consumerTimeout
                     || (processed > 0 && !hasNext)) { // Need to commit the offset for the last round
                     try {
+                        metricRegistry.meter("org.apache.camel.component.kafka.KafkaConsumer.topic." + endpoint.getTopic() + ".barrierAwait.meter").mark();
+                        long barrierAwaitStartTime = System.currentTimeMillis();
                         barrier.await(endpoint.getBarrierAwaitTimeoutMs(), TimeUnit.MILLISECONDS);
+                        long barrierAwaitEndTime = System.currentTimeMillis();
+                        metricRegistry.timer("org.apache.camel.component.kafka.KafkaConsumer.topic." + endpoint.getTopic() + ".barrierAwait.timer").update(barrierAwaitEndTime - barrierAwaitStartTime, TimeUnit.MILLISECONDS);
                         if (!consumerTimeout) {
                             processed = 0;
                         }
                     } catch (Exception e) {
+                        log.error("Barrier await exception occured for topic {}", endpoint.getTopic(), e);
+                        metricRegistry.meter("org.apache.camel.component.kafka.KafkaConsumer.topic." + endpoint.getTopic() + ".barrierAwait.exception").mark();
+                        metricRegistry.meter("org.apache.camel.component.kafka.KafkaConsumer.barrierAwait.exception").mark();
                         getExceptionHandler().handleException("Error waiting for batch to complete", e);
                         break;
                     }
+                }
+                long end = System.currentTimeMillis();
+                if (!consumerTimeout) {
+                    metricRegistry.timer("org.apache.camel.component.kafka.KafkaConsumer.topic." + endpoint.getTopic() + ".consume.timer").update(end - start, TimeUnit.MILLISECONDS);
+                } else {
+                    metricRegistry.meter("org.apache.camel.component.kafka.KafkaConsumer.topic." + endpoint.getTopic() + ".consume.timeout.meter").mark();
                 }
             }
         }
@@ -195,8 +226,19 @@ public class KafkaConsumer extends DefaultConsumer {
 
         @Override
         public void run() {
-            LOG.debug("Commit offsets on consumer: {}", ObjectHelper.getIdentityHashCode(consumer));
-            consumer.commitOffsets();
+            try {
+                metricRegistry.meter("org.apache.camel.component.kafka.KafkaConsumer.topic." + endpoint.getTopic() + ".commitOffsets.meter").mark();
+                log.debug("Commit offsets on consumer: {} topic: {}", ObjectHelper.getIdentityHashCode(consumer), endpoint.getTopic());
+                long start = System.currentTimeMillis();
+                consumer.commitOffsets();
+                long end = System.currentTimeMillis();
+                metricRegistry.timer("org.apache.camel.component.kafka.KafkaConsumer.topic." + endpoint.getTopic() + ".commitOffsets.timer").update(end - start, TimeUnit.MILLISECONDS);
+            } catch (RuntimeException e) {
+                metricRegistry.meter("org.apache.camel.component.kafka.KafkaConsumer.topic." + endpoint.getTopic() + ".commitOffsets.exception").mark();
+                metricRegistry.meter("org.apache.camel.component.kafka.KafkaConsumer.commitOffsets.exception").mark();
+                log.error("Failed to commit offsets for topic {}", endpoint.getTopic(), e);
+                throw e;
+            }
         }
     }
 
@@ -210,7 +252,7 @@ public class KafkaConsumer extends DefaultConsumer {
             customDecoder.setClientDecoder(clientDecoder);
             valueDecoder.set(it, customDecoder);
         } catch (NoSuchFieldException | IllegalAccessException e) {
-            LOG.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -237,7 +279,7 @@ public class KafkaConsumer extends DefaultConsumer {
                 }
             }
             // no more data so commit offset
-            LOG.debug("Commit offsets on consumer: {}", ObjectHelper.getIdentityHashCode(consumer));
+            log.debug("Commit offsets on consumer: {}", ObjectHelper.getIdentityHashCode(consumer));
             consumer.commitOffsets();
         }
     }

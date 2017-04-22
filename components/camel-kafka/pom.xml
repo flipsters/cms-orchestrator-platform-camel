@@ -43,9 +43,18 @@
     </dependency>
     <dependency>
       <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka_2.10</artifactId>
-      <version>${kafka-version}</version>
+      <artifactId>kafka-clients</artifactId>
+      <version>0.10.1.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka_2.11</artifactId>
+      <version>0.10.1.1</version>
       <exclusions>
+        <exclusion>
+          <groupId>com.yammer.metrics</groupId>
+          <artifactId>metrics-core</artifactId>
+        </exclusion>
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-simple</artifactId>
@@ -55,12 +64,6 @@
               <groupId>org.scala-lang</groupId>
           </exclusion>
       </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.scala-lang</groupId>
-      <artifactId>scala-library</artifactId>
-      <version>${scala-2.10-version}</version>
-      <scope>provided</scope>
     </dependency>
 
     <dependency>

@@ -16,25 +16,32 @@
  */
 package org.apache.camel.component.kafka;
 
-import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
-import kafka.javaapi.producer.Producer;
-import kafka.producer.KeyedMessage;
-import kafka.producer.ProducerConfig;
-import kafka.producer.async.DefaultEventHandler;
-import kafka.serializer.Encoder;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.AsyncCallback;
 import org.apache.camel.CamelException;
 import org.apache.camel.CamelExchangeException;
 import org.apache.camel.Exchange;
-import org.apache.camel.impl.DefaultProducer;
+import org.apache.camel.impl.DefaultAsyncProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 
-/**
- *
- */
-public class KafkaProducer<K, V> extends DefaultProducer {
+import static org.apache.camel.component.kafka.KafkaEndpoint.METRIC_REGISTRY;
 
-    protected Producer<K, V> producer;
+@Slf4j
+public class KafkaProducer extends DefaultAsyncProducer {
+
+    private org.apache.kafka.clients.producer.KafkaProducer kafkaProducer;
     private final KafkaEndpoint endpoint;
 
     public KafkaProducer(KafkaEndpoint endpoint) {
@@ -42,79 +49,137 @@ public class KafkaProducer<K, V> extends DefaultProducer {
         this.endpoint = endpoint;
     }
 
-    @Override
-    protected void doStop() throws Exception {
-        if (producer != null) {
-            producer.close();
-        }
-    }
-
     Properties getProps() {
         Properties props = endpoint.getConfiguration().createProducerProperties();
-        if (endpoint.getBrokers() != null) {
-            props.put("metadata.broker.list", endpoint.getBrokers());
-        }
-        if (endpoint.getSerializerClass() != null
-            && !endpoint.getSerializerClass().equals("kafka.serializer.StringEncoder")
-            && !endpoint.getSerializerClass().equals("kafka.serializer.DefaultEncoder")) {
-            throw new RuntimeException("Unsupported serialization exception !!!");
+        endpoint.updateClassProperties(props);
+        if (endpoint.getConfiguration().getBrokers() != null) {
+            props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, endpoint.getConfiguration().getBrokers());
         }
         return props;
+    }
+
+
+    public org.apache.kafka.clients.producer.KafkaProducer getKafkaProducer() {
+        return kafkaProducer;
+    }
+
+    /**
+     * To use a custom {@link org.apache.kafka.clients.producer.KafkaProducer} instance.
+     */
+    public void setKafkaProducer(org.apache.kafka.clients.producer.KafkaProducer kafkaProducer) {
+        this.kafkaProducer = kafkaProducer;
     }
 
     @Override
     protected void doStart() throws Exception {
         Properties props = getProps();
-        ProducerConfig config = new ProducerConfig(props);
-        producer = new Producer<K, V>(config);
-        Field f = producer.getClass().getDeclaredField("underlying");
-        f.setAccessible(true);
-        kafka.producer.Producer underlyingProducer = (kafka.producer.Producer) f.get(producer);
-        Field eventHandlerField = underlyingProducer.getClass().getDeclaredField("eventHandler");
-        eventHandlerField.setAccessible(true);
-        DefaultEventHandler eventHandler = (DefaultEventHandler) eventHandlerField.get(underlyingProducer);
-        Field encoder = eventHandler.getClass().getDeclaredField("kafka$producer$async$DefaultEventHandler$$encoder");
-        encoder.setAccessible(true);
-        Encoder<V> clientEncoder = (Encoder<V>) encoder.get(eventHandler);
-        CamelKafkaExchangeEncoder<Encoder<V>, V> customEncoder = new CamelKafkaExchangeEncoder<>();
-        customEncoder.setClientEncoder(clientEncoder);
-        encoder.set(eventHandler, customEncoder);
+        if (kafkaProducer == null) {
+            ClassLoader threadClassLoader = Thread.currentThread().getContextClassLoader();
+            try {
+                // Kafka uses reflection for loading authentication settings, use its classloader
+                Thread.currentThread().setContextClassLoader(org.apache.kafka.clients.producer.KafkaProducer.class.getClassLoader());
+                kafkaProducer = new org.apache.kafka.clients.producer.KafkaProducer(props, new ByteArraySerializer(), new CamelKafkaExchangeSerializer());
+            } finally {
+                Thread.currentThread().setContextClassLoader(threadClassLoader);
+            }
+        }
     }
 
     @Override
+    protected void doStop() throws Exception {
+        if (kafkaProducer != null) {
+            kafkaProducer.close();
+        }
+    }
+
     @SuppressWarnings("unchecked")
-    public void process(Exchange exchange) throws CamelException {
-        String topic = endpoint.getTopic();
+    protected Iterator<ProducerRecord> createRecorder(Exchange exchange) throws CamelException {
+        String topic = endpoint.getConfiguration().getTopic();
         if (!endpoint.isBridgeEndpoint()) {
             topic = exchange.getIn().getHeader(KafkaConstants.TOPIC, topic, String.class);
         }
         if (topic == null) {
             throw new CamelExchangeException("No topic key set", exchange);
         }
-        K partitionKey = (K) exchange.getIn().getHeader(KafkaConstants.PARTITION_KEY);
-        boolean hasPartitionKey = partitionKey != null;
+        Object partitionKey = exchange.getIn().getHeader(KafkaConstants.PARTITION_KEY);
+        boolean hasPartitionKey = false;
+        Integer partitionKeyInt = null;
+        if (partitionKey != null) {
+            try {
+                partitionKeyInt = new Integer(partitionKey.toString());
+                hasPartitionKey = true;
+            } catch (NumberFormatException e) {
+            }
+        }
 
-        K messageKey = (K) exchange.getIn().getHeader(KafkaConstants.KEY);
+        Object messageKey = exchange.getIn().getHeader(KafkaConstants.KEY);
+        if (!hasPartitionKey && messageKey == null) {
+            messageKey = partitionKey;
+        }
         boolean hasMessageKey = messageKey != null;
 
-        V msg = (V) exchange.getIn().getBody(byte[].class);
-        CamelKafkaGenericObject<V> headerMsg = new CamelKafkaGenericObject.CamelKafkaGenericObjectBuilder<V>()
-            .setBody(msg)
-            .setHeaders(exchange.getIn().getHeaders())
-            .build();
-        KeyedMessage<K, V> data;
-
+        byte[] bytes = exchange.getIn().getBody(byte[].class);
+        CamelKafkaExchangeObject object = new CamelKafkaExchangeObject.CamelKafkaExchangeObjectBuilder().setBody(bytes).setHeaders(exchange.getIn().getHeaders()).build();
+        ProducerRecord record;
         if (hasPartitionKey && hasMessageKey) {
-            data = new KeyedMessage(topic, messageKey, partitionKey, headerMsg);
-        } else if (hasPartitionKey) {
-            data = new KeyedMessage(topic, partitionKey, headerMsg);
+            record = new ProducerRecord(topic, partitionKeyInt, messageKey, object);
         } else if (hasMessageKey) {
-            data = new KeyedMessage(topic, messageKey, headerMsg);
+            record = new ProducerRecord(topic, messageKey, object);
         } else {
             log.warn("No message key or partition key set");
-            data = new KeyedMessage(topic, messageKey, partitionKey, headerMsg);
+            record = new ProducerRecord(topic, object);
         }
-        producer.send(data);
+        return Collections.singletonList(record).iterator();
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    // Camel calls this method if the endpoint isSynchronous(), as the KafkaEndpoint creates a SynchronousDelegateProducer for it
+    public void process(Exchange exchange) throws Exception {
+        Iterator<ProducerRecord> c = createRecorder(exchange);
+        List<Future<RecordMetadata>> futures = new LinkedList<Future<RecordMetadata>>();
+        List<RecordMetadata> recordMetadatas = new ArrayList<RecordMetadata>();
+
+        if (endpoint.getConfiguration().isRecordMetadata()) {
+            if (exchange.hasOut()) {
+                exchange.getOut().setHeader(KafkaConstants.KAFKA_RECORDMETA, recordMetadatas);
+            } else {
+                exchange.getIn().setHeader(KafkaConstants.KAFKA_RECORDMETA, recordMetadatas);
+            }
+        }
+
+        String topic = endpoint.getConfiguration().getTopic();
+        METRIC_REGISTRY.meter("org.apache.camel.component.kafka.KafkaProducer.send.meter").mark();
+        METRIC_REGISTRY.meter("org.apache.camel.component.kafka.KafkaProducer.topic." + topic + ".send.meter").mark();
+        long start = System.currentTimeMillis();
+        try {
+            while (c.hasNext()) {
+                futures.add(kafkaProducer.send(c.next()));
+            }
+            for (Future<RecordMetadata> f : futures) {
+                //wait for them all to be sent
+                recordMetadatas.add(f.get());
+            }
+        } catch (Exception e) {
+            METRIC_REGISTRY.meter("org.apache.camel.component.kafka.KafkaProducer.send.exception").mark();
+            METRIC_REGISTRY.meter("org.apache.camel.component.kafka.KafkaProducer.topic." + topic + ".send.exception").mark();
+            throw e;
+        } finally {
+            long end = System.currentTimeMillis();
+            METRIC_REGISTRY.timer("org.apache.camel.component.kafka.KafkaProducer.topic." + topic + ".send.timer").update(end - start, TimeUnit.MILLISECONDS);
+            METRIC_REGISTRY.timer("org.apache.camel.component.kafka.KafkaProducer.send.timer").update(end - start, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public boolean process(Exchange exchange, AsyncCallback callback) {
+        try {
+            process(exchange);
+        } catch (Exception ex) {
+            exchange.setException(ex);
+        }
+        callback.done(true);
+        return true;
+    }
 }

@@ -34,7 +34,6 @@ import org.apache.camel.impl.DefaultAsyncProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.apache.kafka.common.serialization.ByteArraySerializer;
 
 import static org.apache.camel.component.kafka.KafkaEndpoint.METRIC_REGISTRY;
 
@@ -78,7 +77,7 @@ public class KafkaProducer extends DefaultAsyncProducer {
             try {
                 // Kafka uses reflection for loading authentication settings, use its classloader
                 Thread.currentThread().setContextClassLoader(org.apache.kafka.clients.producer.KafkaProducer.class.getClassLoader());
-                kafkaProducer = new org.apache.kafka.clients.producer.KafkaProducer(props, new ByteArraySerializer(), new CamelKafkaExchangeSerializer());
+                kafkaProducer = new org.apache.kafka.clients.producer.KafkaProducer(props, new ByteOrStringSerializer(), new CamelKafkaExchangeSerializer());
             } finally {
                 Thread.currentThread().setContextClassLoader(threadClassLoader);
             }

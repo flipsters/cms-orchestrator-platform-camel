@@ -61,6 +61,9 @@ public class KafkaConfiguration {
     //fetch.min.bytes
     @UriParam(label = "consumer", defaultValue = "1024")
     private Integer fetchMinBytes = 1024;
+    //fetch.min.bytes
+    @UriParam(label = "consumer", defaultValue = "52428800")
+    private Integer fetchMaxBytes = 52428800;
     //heartbeat.interval.ms
     @UriParam(label = "consumer", defaultValue = "3000")
     private Integer heartbeatIntervalMs = 3000;
@@ -305,6 +308,7 @@ public class KafkaConfiguration {
         addPropertyIfNotNull(props, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, getKeyDeserializer());
         addPropertyIfNotNull(props, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, getValueDeserializer());
         addPropertyIfNotNull(props, ConsumerConfig.FETCH_MIN_BYTES_CONFIG, getFetchMinBytes());
+        addPropertyIfNotNull(props, ConsumerConfig.FETCH_MAX_BYTES_CONFIG, getFetchMaxBytes());
         addPropertyIfNotNull(props, ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, getHeartbeatIntervalMs());
         addPropertyIfNotNull(props, ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, getMaxPartitionFetchBytes());
         addPropertyIfNotNull(props, ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, getSessionTimeoutMs());
@@ -478,12 +482,23 @@ public class KafkaConfiguration {
         return fetchMinBytes;
     }
 
+    public Integer getFetchMaxBytes() {
+        return fetchMaxBytes;
+    }
+
     /**
      * The minimum amount of data the server should return for a fetch request.
      * If insufficient data is available the request will wait for that much data to accumulate before answering the request.
      */
     public void setFetchMinBytes(Integer fetchMinBytes) {
         this.fetchMinBytes = fetchMinBytes;
+    }
+
+    /**
+     * The max amount of data the server should return for a fetch request.
+     */
+    public void setFetchMaxBytes(Integer fetchMaxBytes) {
+        this.fetchMaxBytes = fetchMaxBytes;
     }
 
     public Integer getFetchWaitMaxMs() {

@@ -16,4 +16,5 @@ public class OrchestratorConstants {
     public static final String STATUS_COUNTER = "X-StatusCounter";
     public static final String PARENT_STATUS_COUNTER = "X-ParentStatusCounter";
     public static final String ROUTE_JOIN_ID = "X-RouteJoinId";
+    public static final String ORIGINAL_EXCHANGE_BODY = "X-OriginalExchangeBody";
 }

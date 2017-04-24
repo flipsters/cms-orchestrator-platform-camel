@@ -1,5 +1,6 @@
 package org.apache.camel.cms.orchestrator.processor;
 
+import com.google.common.collect.Sets;
 import flipkart.cms.aggregator.client.AggregateStore;
 import flipkart.cms.aggregator.client.ExpiryStore;
 import flipkart.cms.aggregator.client.MappingStore;
@@ -17,12 +18,14 @@ import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
 import org.apache.camel.cms.orchestrator.factory.ExpiryStoreFactory;
 import org.apache.camel.cms.orchestrator.factory.MappingStoreFactory;
 import org.apache.camel.cms.orchestrator.utils.ByteUtils;
+import org.apache.camel.cms.orchestrator.utils.OrchestratorUtils;
 import org.apache.camel.cms.orchestrator.utils.PlatformUtils;
 import org.apache.camel.processor.RecipientList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import static org.apache.camel.cms.orchestrator.OrchestratorConstants.PARENT_REQUEST_ID_DELIM;
@@ -107,8 +110,9 @@ public class AsyncTrackProcessor extends RecipientList {
     private boolean postProcess(String requestId, Payload originalPayload, Exchange exchange, String trackId, String tenantId) throws Exception {
         LOG.info("Extracting track ID for request ID " + requestId);
         RequestIdentifier requestIdentifier = asyncAckExtractor.getRequestIdentifier(exchange);
+        Set<String> coreHeaderTitles = Sets.newHashSet(OrchestratorUtils.getCoreHeaderTitles());
         for (Map.Entry<String, Object> header : exchange.getIn().getHeaders().entrySet()) {
-            if (!originalPayload.getHeaders().containsKey(header.getKey())) {
+            if (!originalPayload.getHeaders().containsKey(header.getKey()) && coreHeaderTitles.contains(header.getKey())) {
                 originalPayload.getHeaders().put(header.getKey(), header.getValue());
             }
         }

@@ -20,6 +20,7 @@ public class OrchestratorUtils {
     headers.add(OrchestratorConstants.PIPELINE_HANDLE_HEADER);
     headers.add(OrchestratorConstants.STATUS_COUNTER);
     headers.add(OrchestratorConstants.PARENT_STATUS_COUNTER);
+    headers.add(OrchestratorConstants.ORIGINAL_EXCHANGE_BODY);
     return headers;
   }
 

@@ -22,6 +22,7 @@ import org.apache.camel.processor.RecipientList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import static org.apache.camel.cms.orchestrator.OrchestratorConstants.PARENT_REQUEST_ID_DELIM;
@@ -106,6 +107,11 @@ public class AsyncTrackProcessor extends RecipientList {
     private boolean postProcess(String requestId, Payload originalPayload, Exchange exchange, String trackId, String tenantId) throws Exception {
         LOG.info("Extracting track ID for request ID " + requestId);
         RequestIdentifier requestIdentifier = asyncAckExtractor.getRequestIdentifier(exchange);
+        for (Map.Entry<String, Object> header : exchange.getIn().getHeaders().entrySet()) {
+            if (!originalPayload.getHeaders().containsKey(header.getKey())) {
+                originalPayload.getHeaders().put(header.getKey(), header.getValue());
+            }
+        }
         String externalRequestId = requestIdentifier.getRequestId();
         String externalTenantId = requestIdentifier.getTenantId();
         // call map table and store the information over there

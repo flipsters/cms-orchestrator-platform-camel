@@ -61,7 +61,7 @@ public class KafkaConfiguration {
     //fetch.min.bytes
     @UriParam(label = "consumer", defaultValue = "1024")
     private Integer fetchMinBytes = 1024;
-    //fetch.min.bytes
+    //fetch.max.bytes
     @UriParam(label = "consumer", defaultValue = "52428800")
     private Integer fetchMaxBytes = 52428800;
     //heartbeat.interval.ms
@@ -95,6 +95,9 @@ public class KafkaConfiguration {
     //fetch.max.wait.ms
     @UriParam(label = "consumer", defaultValue = "500")
     private Integer fetchWaitMaxMs = 500;
+    //max.poll.interval.ms
+    @UriParam(label = "consumer", defaultValue = "1800000")
+    private Integer maxPollIntervalMs = 1800000;
     @UriParam(label = "consumer")
     private boolean seekToBeginning;
 
@@ -344,6 +347,7 @@ public class KafkaConfiguration {
         addPropertyIfNotNull(props, ConsumerConfig.METRICS_SAMPLE_WINDOW_MS_CONFIG, getMetricsSampleWindowMs());
         addPropertyIfNotNull(props, ConsumerConfig.RECONNECT_BACKOFF_MS_CONFIG, getReconnectBackoffMs());
         addPropertyIfNotNull(props, ConsumerConfig.RETRY_BACKOFF_MS_CONFIG, getRetryBackoffMs());
+        addPropertyIfNotNull(props, ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, getMaxPollIntervalMs());
         //SASL
         addPropertyIfNotNull(props, SaslConfigs.SASL_KERBEROS_SERVICE_NAME, getSaslKerberosServiceName());
         addPropertyIfNotNull(props, SaslConfigs.SASL_KERBEROS_KINIT_CMD, getKerberosInitCmd());
@@ -557,11 +561,22 @@ public class KafkaConfiguration {
     }
 
     /**
+     * Returns The maximum delay between invocations of poll() when using consumer group management.
+     */
+    public Integer getMaxPollIntervalMs() {
+        return maxPollIntervalMs;
+    }
+
+    /**
      * Before each retry, the producer refreshes the metadata of relevant topics to see if a new leader has been elected.
      * Since leader election takes a bit of time, this property specifies the amount of time that the producer waits before refreshing the metadata.
      */
     public void setRetryBackoffMs(Integer retryBackoffMs) {
         this.retryBackoffMs = retryBackoffMs;
+    }
+
+    public void setMaxPollIntervalMs(Integer maxPollIntervalMs) {
+        this.maxPollIntervalMs = maxPollIntervalMs;
     }
 
     public Integer getSendBufferBytes() {

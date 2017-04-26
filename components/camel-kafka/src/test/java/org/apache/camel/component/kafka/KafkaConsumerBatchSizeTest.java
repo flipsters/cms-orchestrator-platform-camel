@@ -86,7 +86,7 @@ public class KafkaConsumerBatchSizeTest extends BaseEmbeddedKafkaTest {
         for (int k = 1; k <= 2; k++) {
             String msg = "m" + k;
             KeyedMessage<String, String> data = new KeyedMessage<String, String>(TOPIC, "1", msg);
-            producer.send(data);
+            // producer.send(data);
         }
         to.assertIsSatisfied(3000);
         
@@ -101,7 +101,7 @@ public class KafkaConsumerBatchSizeTest extends BaseEmbeddedKafkaTest {
         for (int k = 3; k <= 10; k++) {
             String msg = "m" + k;
             KeyedMessage<String, String> data = new KeyedMessage<String, String>(TOPIC, "1", msg);
-            producer.send(data);
+            // producer.send(data);
         }
 
         to.assertIsSatisfied(3000);

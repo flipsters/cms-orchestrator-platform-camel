@@ -79,7 +79,7 @@ public class KafkaConsumerFullTest extends BaseEmbeddedKafkaTest {
         for (int k = 0; k < 5; k++) {
             String msg = "message-" + k;
             KeyedMessage<String, String> data = new KeyedMessage<String, String>(TOPIC, "1", msg);
-            producer.send(data);
+            // producer.send(data);
         }
         to.assertIsSatisfied(3000);
     }

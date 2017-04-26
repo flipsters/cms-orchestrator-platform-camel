@@ -44,13 +44,10 @@ public class KafkaComponentTest {
         String remaining = "broker1:12345,broker2:12566";
 
         KafkaEndpoint endpoint = new KafkaComponent(context).createEndpoint(uri, remaining, params);
-        assertEquals("somehost:2987", endpoint.getZookeeperConnect());
-        assertEquals("somehost", endpoint.getZookeeperHost());
-        assertEquals(2987, endpoint.getZookeeperPort());
-        assertEquals("broker1:12345,broker2:12566", endpoint.getBrokers());
-        assertEquals("mytopic", endpoint.getTopic());
-        assertEquals(3, endpoint.getConsumerStreams());
-        assertEquals("com.class.Party", endpoint.getPartitioner());
+        assertEquals("broker1:12345,broker2:12566", endpoint.getConfiguration().getBrokers());
+        assertEquals("mytopic", endpoint.getConfiguration().getTopic());
+        assertEquals(3, endpoint.getConfiguration().getConsumerStreams());
+        assertEquals("com.class.Party", endpoint.getConfiguration().getPartitioner());
     }
 
     @Test
@@ -68,12 +65,9 @@ public class KafkaComponentTest {
         String remaining = "broker1:12345,broker2:12566";
 
         KafkaEndpoint endpoint = new KafkaComponent(context).createEndpoint(uri, remaining, params);
-        assertEquals("thehost:2181/chroot", endpoint.getZookeeperConnect());
-        assertNull(endpoint.getZookeeperHost());
-        assertEquals(-1, endpoint.getZookeeperPort());
-        assertEquals("broker1:12345,broker2:12566", endpoint.getBrokers());
-        assertEquals("mytopic", endpoint.getTopic());
-        assertEquals(3, endpoint.getConsumerStreams());
-        assertEquals("com.class.Party", endpoint.getPartitioner());
+        assertEquals("broker1:12345,broker2:12566", endpoint.getConfiguration().getBrokers());
+        assertEquals("mytopic", endpoint.getConfiguration().getTopic());
+        assertEquals(3, endpoint.getConfiguration().getConsumerStreams());
+        assertEquals("com.class.Party", endpoint.getConfiguration().getPartitioner());
     }
 }

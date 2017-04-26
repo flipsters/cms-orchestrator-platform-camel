@@ -97,7 +97,7 @@ public class KafkaConfiguration {
     private Integer fetchWaitMaxMs = 500;
     //max.poll.interval.ms
     @UriParam(label = "consumer", defaultValue = "1800000")
-    private Integer maxPollIntervalMs = 1800000;
+    private Integer maxPollIntervalMs = 3600000;
     @UriParam(label = "consumer")
     private boolean seekToBeginning;
 

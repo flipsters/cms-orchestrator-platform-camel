@@ -144,7 +144,7 @@ public class TokenXMLExpressionIterator extends ExpressionAdapter {
             this.tagTokenPattern = 
                 Pattern.compile(MessageFormat.format(SCAN_BLOCK_TOKEN_REGEX_TEMPLATE, 
                                                      SCAN_TOKEN_NS_PREFIX_REGEX + tagToken.substring(1, tagToken.length() - 1)), 
-                                                     Pattern.MULTILINE | Pattern.DOTALL);
+                                                     Pattern.MULTILINE | Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
             
             this.inheritNamespaceToken = inheritNamespaceToken;
             if (inheritNamespaceToken != null && OPTION_WRAP_TOKEN.equals(inheritNamespaceToken)) {
@@ -159,7 +159,7 @@ public class TokenXMLExpressionIterator extends ExpressionAdapter {
                     this.inheritNamespaceTokenPattern = 
                         Pattern.compile(MessageFormat.format(SCAN_PARENT_TOKEN_REGEX_TEMPLATE,
                                                              SCAN_TOKEN_NS_PREFIX_REGEX + inheritNamespaceToken.substring(1, inheritNamespaceToken.length() - 1)), 
-                                                             Pattern.MULTILINE | Pattern.DOTALL);
+                                                             Pattern.MULTILINE | Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
                 }
             }
         }

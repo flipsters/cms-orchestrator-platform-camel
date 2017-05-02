@@ -100,7 +100,7 @@ public class TokenXMLPairExpressionIterator extends TokenPairExpressionIterator 
                 tokenSb = new StringBuilder("<").append(SCAN_TOKEN_NS_PREFIX_REGEX).
                                 append(inheritNamespaceToken.substring(1, inheritNamespaceToken.length() - 1)).append(SCAN_TOKEN_REGEX);  
                 // the namespaces on the parent tag can be in multi line, so we need to instruct the dot to support multilines
-                this.inheritNamespaceTokenPattern = Pattern.compile(tokenSb.toString(), Pattern.MULTILINE | Pattern.DOTALL);
+                this.inheritNamespaceTokenPattern = Pattern.compile(tokenSb.toString(), Pattern.MULTILINE | Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
             }
         }
 

@@ -18,7 +18,9 @@ package org.apache.camel.component.rabbitmq;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -283,7 +285,12 @@ public class RabbitMQConsumer extends DefaultConsumer {
          * Bind consumer to channel
          */
         public void start() throws IOException {
-            tag = channel.basicConsume(endpoint.getQueue(), endpoint.isAutoAck(), this);
+            Map<String, Object> properties = new HashMap<String, Object>();
+            if(endpoint.getHaPolicy() != null) {
+                properties.put("x-ha-policy", endpoint.getHaPolicy());
+            }
+
+            tag = channel.basicConsume(endpoint.getQueue(), endpoint.isAutoAck(), properties, this);
         }
 
         /**

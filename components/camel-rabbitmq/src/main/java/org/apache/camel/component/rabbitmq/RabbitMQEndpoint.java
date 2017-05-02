@@ -143,6 +143,8 @@ public class RabbitMQEndpoint extends DefaultEndpoint {
     private ArgsConfigurer queueArgsConfigurer;
     @UriParam
     private ArgsConfigurer exchangeArgsConfigurer;
+    @UriParam(defaultValue = "all")
+    private String haPolicy = "all";
 
     public RabbitMQEndpoint() {
     }
@@ -156,11 +158,21 @@ public class RabbitMQEndpoint extends DefaultEndpoint {
         this.connectionFactory = connectionFactory;
     }
 
+    public String getHaPolicy() {
+        return haPolicy;
+    }
+
+    public void setHaPolicy(String haPolicy) {
+        this.haPolicy = haPolicy;
+    }
+
     public Exchange createRabbitExchange(Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
         Exchange exchange = new DefaultExchange(getCamelContext(), getExchangePattern());
 
         Message message = new DefaultMessage();
         exchange.setIn(message);
+        exchange.setFromEndpoint(this);
+
 
         message.setHeader(RabbitMQConstants.ROUTING_KEY, envelope.getRoutingKey());
         message.setHeader(RabbitMQConstants.EXCHANGE_NAME, envelope.getExchange());

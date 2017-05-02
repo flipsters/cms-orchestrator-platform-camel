@@ -67,6 +67,8 @@ public class KafkaEndpoint extends DefaultEndpoint implements MultipleConsumersS
     @UriParam(label = "producer")
     private boolean bridgeEndpoint;
 
+    private boolean includeHeaders = false;
+
     public KafkaEndpoint() {
     }
 
@@ -172,9 +174,13 @@ public class KafkaEndpoint extends DefaultEndpoint implements MultipleConsumersS
         Exchange exchange = super.createExchange();
 
         Message message = exchange.getIn();
-        CamelKafkaExchangeObject object = (CamelKafkaExchangeObject) record.value();
-        message.setBody(object.getBody());
-        message.getHeaders().putAll(object.getHeaders());
+        if (includeHeaders) {
+            CamelKafkaExchangeObject object = (CamelKafkaExchangeObject) record.value();
+            message.setBody(object.getBody());
+            message.getHeaders().putAll(object.getHeaders());
+        } else {
+            message.setBody(record.value());
+        }
         message.setHeader(KafkaConstants.PARTITION, record.partition());
         message.setHeader(KafkaConstants.TOPIC, record.topic());
         message.setHeader(KafkaConstants.OFFSET, record.offset());
@@ -193,10 +199,18 @@ public class KafkaEndpoint extends DefaultEndpoint implements MultipleConsumersS
         return bridgeEndpoint;
     }
 
+    public boolean isIncludeHeaders() {
+        return includeHeaders;
+    }
+
     /**
      * If the option is true, then KafkaProducer will ignore the KafkaConstants.TOPIC header setting of the inbound message.
      */
     public void setBridgeEndpoint(boolean bridgeEndpoint) {
         this.bridgeEndpoint = bridgeEndpoint;
+    }
+
+    public void setIncludeHeaders(boolean includeHeaders) {
+        this.includeHeaders = includeHeaders;
     }
 }

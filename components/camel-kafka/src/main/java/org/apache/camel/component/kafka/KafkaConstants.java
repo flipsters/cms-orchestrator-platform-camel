@@ -24,7 +24,7 @@ public final class KafkaConstants {
     public static final String TOPIC = "kafka.TOPIC";
     public static final String OFFSET = "kafka.OFFSET";
 
-    public static final String KAFKA_DEFAULT_SERIALIZER  = "org.apache.kafka.common.serialization.BytesSerializer";
+    public static final String KAFKA_DEFAULT_SERIALIZER  = "org.apache.camel.component.kafka.ByteOrStringSerializer";
     public static final String KAFKA_DEFAULT_DESERIALIZER  = "org.apache.kafka.common.serialization.BytesDeserializer";
     public static final String KAFKA_DEFAULT_PARTITIONER = "org.apache.kafka.clients.producer.internals.DefaultPartitioner";
     public static final String PARTITIONER_RANGE_ASSIGNOR = "org.apache.kafka.clients.consumer.RangeAssignor";

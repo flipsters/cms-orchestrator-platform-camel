@@ -34,6 +34,8 @@ import org.apache.camel.impl.DefaultAsyncProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.Serializer;
 
 import static org.apache.camel.component.kafka.KafkaEndpoint.METRIC_REGISTRY;
 
@@ -77,7 +79,11 @@ public class KafkaProducer extends DefaultAsyncProducer {
             try {
                 // Kafka uses reflection for loading authentication settings, use its classloader
                 Thread.currentThread().setContextClassLoader(org.apache.kafka.clients.producer.KafkaProducer.class.getClassLoader());
-                kafkaProducer = new org.apache.kafka.clients.producer.KafkaProducer(props, new ByteOrStringSerializer(), new CamelKafkaExchangeSerializer());
+                if (endpoint.isIncludeHeaders()) {
+                    kafkaProducer = new org.apache.kafka.clients.producer.KafkaProducer(props, new ByteOrStringSerializer(), new CamelKafkaExchangeSerializer());
+                } else {
+                    kafkaProducer = new org.apache.kafka.clients.producer.KafkaProducer(props);
+                }
             } finally {
                 Thread.currentThread().setContextClassLoader(threadClassLoader);
             }
@@ -117,16 +123,18 @@ public class KafkaProducer extends DefaultAsyncProducer {
         }
         boolean hasMessageKey = messageKey != null;
 
-        byte[] bytes = exchange.getIn().getBody(byte[].class);
-        CamelKafkaExchangeObject object = new CamelKafkaExchangeObject.CamelKafkaExchangeObjectBuilder().setBody(bytes).setHeaders(exchange.getIn().getHeaders()).build();
+        Object messageContent = exchange.getIn().getBody();
+        if (endpoint.isIncludeHeaders()) {
+            messageContent = new CamelKafkaExchangeObject.CamelKafkaExchangeObjectBuilder().setBody(exchange.getIn().getBody(byte[].class)).setHeaders(exchange.getIn().getHeaders()).build();
+        }
         ProducerRecord record;
         if (hasPartitionKey && hasMessageKey) {
-            record = new ProducerRecord(topic, partitionKeyInt, messageKey, object);
+            record = new ProducerRecord(topic, partitionKeyInt, messageKey, messageContent);
         } else if (hasMessageKey) {
-            record = new ProducerRecord(topic, messageKey, object);
+            record = new ProducerRecord(topic, messageKey, messageContent);
         } else {
             log.warn("No message key or partition key set");
-            record = new ProducerRecord(topic, object);
+            record = new ProducerRecord(topic, messageContent);
         }
         return Collections.singletonList(record).iterator();
     }

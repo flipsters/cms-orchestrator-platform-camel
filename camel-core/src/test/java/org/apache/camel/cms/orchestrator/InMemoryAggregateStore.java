@@ -7,6 +7,8 @@ import com.google.common.collect.Maps;
 import flipkart.cms.aggregator.client.AggregateStore;
 import flipkart.cms.aggregator.client.Aggregator;
 import flipkart.cms.aggregator.lock.exception.SynchronisedOperationException;
+import flipkart.cms.aggregator.model.AsyncContext;
+import flipkart.cms.aggregator.model.JoinResponse;
 import flipkart.cms.aggregator.model.ResumeObject;
 import lombok.Getter;
 import org.apache.camel.Exchange;
@@ -57,7 +59,7 @@ public class InMemoryAggregateStore implements AggregateStore {
     }
 
     @Override
-    public boolean join(String parentId, String childId, byte[] payload, String aggregatorId) throws IOException, SynchronisedOperationException {
+    public JoinResponse join(String parentId, String childId, byte[] payload, String aggregatorId) throws IOException, SynchronisedOperationException {
         Payload payload1 = null;
         TypeConverter byteTypeConvertor = new TypeConverter() {
             @Override
@@ -113,19 +115,24 @@ public class InMemoryAggregateStore implements AggregateStore {
         }
         put(parentId, childId);
         payloadMap.put(parentId + childId, payload);
-        return isJoinable(parentId);
+        return new JoinResponse(isJoinable(parentId), parentId);
     }
 
     @Override
-    public boolean joinWithWait(String parentId, String endpoint, byte[] payload,
+    public JoinResponse joinWithWait(String parentId, String endpoint, byte[] payload,
                                 String aggregatorId, String routeId) throws IOException, SynchronisedOperationException {
         payloadMap.put(parentId, payload);
-        return isJoinable(parentId);
+        return new JoinResponse(isJoinable(parentId), routeId);
     }
 
     @Override
     public byte[] aggregate(String parentId) throws IOException {
         return null;
+    }
+
+    @Override
+    public byte[] aggregate(String parentId, String routeId) throws IOException {
+        return new byte[0];
     }
 
     @Override
@@ -173,7 +180,17 @@ public class InMemoryAggregateStore implements AggregateStore {
     }
 
     @Override
+    public AsyncContext getParentAsyncContext(String trackId) throws IOException {
+        return null;
+    }
+
+    @Override
     public ResumeObject resumeAsync(String trackId) throws IOException {
+        return null;
+    }
+
+    @Override
+    public ResumeObject forceResumeAsync(String trackId) throws IOException {
         return null;
     }
 

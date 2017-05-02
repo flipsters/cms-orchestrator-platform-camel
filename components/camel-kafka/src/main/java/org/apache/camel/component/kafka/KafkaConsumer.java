@@ -124,7 +124,11 @@ public class KafkaConsumer extends DefaultConsumer {
             try {
                 // Kafka uses reflection for loading authentication settings, use its classloader
                 Thread.currentThread().setContextClassLoader(org.apache.kafka.clients.consumer.KafkaConsumer.class.getClassLoader());
-                this.consumer = new org.apache.kafka.clients.consumer.KafkaConsumer(kafkaProps, new ByteArrayDeserializer(), new CamelKafkaExchangeDeserializer());
+                if (endpoint.isIncludeHeaders()) {
+                    this.consumer = new org.apache.kafka.clients.consumer.KafkaConsumer(kafkaProps, new ByteArrayDeserializer(), new CamelKafkaExchangeDeserializer());
+                } else {
+                    this.consumer = new org.apache.kafka.clients.consumer.KafkaConsumer(kafkaProps);
+                }
             } finally {
                 Thread.currentThread().setContextClassLoader(threadClassLoader);
             }

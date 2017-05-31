@@ -82,11 +82,11 @@
             <version>${spring-boot-version}</version>
             <scope>test</scope>
         </dependency>
-        <!--dependency>
+        <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-netty4-http</artifactId>
             <scope>test</scope>
-        </dependency-->
+        </dependency>
     </dependencies>
 
 </project>

@@ -15,10 +15,8 @@ import org.apache.camel.Exchange;
 import org.apache.camel.NoTypeConversionAvailableException;
 import org.apache.camel.TypeConversionException;
 import org.apache.camel.TypeConverter;
-import org.apache.camel.cms.orchestrator.aggregator.CamelPayloadAggregator;
 import org.apache.camel.cms.orchestrator.aggregator.MockTypeConverterRegistry;
 import org.apache.camel.cms.orchestrator.aggregator.Payload;
-import org.apache.camel.cms.orchestrator.utils.ByteUtils;
 import org.apache.camel.cms.orchestrator.utils.OrchestratorUtils;
 
 import java.io.IOException;

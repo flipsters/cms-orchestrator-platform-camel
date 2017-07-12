@@ -19,8 +19,9 @@ package org.apache.camel.model;
 import org.apache.camel.*;
 import org.apache.camel.builder.*;
 import org.apache.camel.cms.orchestrator.aggregator.AsyncAckExtractor;
-import org.apache.camel.cms.orchestrator.aggregator.CallbackUrlAppender;
-import org.apache.camel.cms.orchestrator.aggregator.TrackIdExtractor;
+import org.apache.camel.cms.orchestrator.aggregator.AsyncPayloadTransformer;
+import org.apache.camel.cms.orchestrator.aggregator.HeterogeneousPayloadAggregator;
+import org.apache.camel.cms.orchestrator.aggregator.PayloadAggregator;
 import org.apache.camel.cms.orchestrator.definition.*;
 import org.apache.camel.cms.orchestrator.factory.AsyncCallbackFactory;
 import org.apache.camel.model.language.ConstantExpression;
@@ -1431,53 +1432,49 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
     }
 
 
-    public WaitForChildrenDefinition<Type> waitForChildren(Expression aggregatorIdExpression, Expression callbackEndpointExpression) {
-        WaitForChildrenDefinition<Type> answer = new WaitForChildrenDefinition<Type>(aggregatorIdExpression, callbackEndpointExpression);
+    public WaitForChildrenDefinition<Type> waitForChildren(HeterogeneousPayloadAggregator heterogeneousPayloadAggregator, Expression callbackEndpointExpression) {
+        WaitForChildrenDefinition<Type> answer = new WaitForChildrenDefinition<Type>(heterogeneousPayloadAggregator, callbackEndpointExpression);
         addOutput(answer);
         return answer;
     }
 
-    public WaitForChildrenDefinition<Type> waitForChildren(String aggregatorId, String callbackEndpoint) {
-        return waitForChildren(simple(aggregatorId), simple(callbackEndpoint));
+    public WaitForChildrenDefinition<Type> waitForChildren(HeterogeneousPayloadAggregator heterogeneousPayloadAggregator, String callbackEndpoint) {
+        return waitForChildren(heterogeneousPayloadAggregator, simple(callbackEndpoint));
     }
 
 
-    public JoinDefinition<Type> join(Expression aggregatorIdExpression) {
-        JoinDefinition<Type> answer = new JoinDefinition<Type>(aggregatorIdExpression);
+    public JoinDefinition<Type> join(PayloadAggregator payloadAggregator) {
+        JoinDefinition<Type> answer = new JoinDefinition<Type>(payloadAggregator);
         addOutput(answer);
         return answer;
-    }
-
-    public JoinDefinition<Type> join(String aggregatorId) {
-        return join(simple(aggregatorId));
     }
 
     public AsyncTrackDefinition<Type> asyncTrack(Expression externalEndpoint, Expression callbackEndpointExpression,
-                                                 Expression aggregatorIdExpression, CallbackUrlAppender callbackUrlAppender, AsyncAckExtractor asyncAckExtractor) {
+                                                 HeterogeneousPayloadAggregator payloadAggregator, AsyncPayloadTransformer asyncPayloadTransformer, AsyncAckExtractor asyncAckExtractor) {
         RecipientListDefinition asyncCallbackDefinition = new RecipientListDefinition(simple(AsyncCallbackFactory.getCallbackEndpoint()));
-        AsyncTrackDefinition<Type> answer = new AsyncTrackDefinition(externalEndpoint, callbackEndpointExpression, aggregatorIdExpression, callbackUrlAppender,
+        AsyncTrackDefinition<Type> answer = new AsyncTrackDefinition(externalEndpoint, callbackEndpointExpression, payloadAggregator, asyncPayloadTransformer,
                 asyncAckExtractor, asyncCallbackDefinition);
         addOutput(answer);
         return answer;
     }
 
     public AsyncTrackDefinition<Type> asyncTrack(Expression externalEndpoint, Expression callbackEndpointExpression,
-                                                 Expression aggregatorIdExpression, CallbackUrlAppender callbackUrlAppender, AsyncAckExtractor asyncAckExtractor, Long expiryBreachTime) {
+                                                 HeterogeneousPayloadAggregator payloadAggregator, AsyncPayloadTransformer asyncPayloadTransformer, AsyncAckExtractor asyncAckExtractor, Long expiryBreachTime) {
         RecipientListDefinition asyncCallbackDefinition = new RecipientListDefinition(simple(AsyncCallbackFactory.getCallbackEndpoint()));
-        AsyncTrackDefinition<Type> answer = new AsyncTrackDefinition(externalEndpoint, callbackEndpointExpression, aggregatorIdExpression, callbackUrlAppender,
+        AsyncTrackDefinition<Type> answer = new AsyncTrackDefinition(externalEndpoint, callbackEndpointExpression, payloadAggregator, asyncPayloadTransformer,
             asyncAckExtractor, asyncCallbackDefinition, expiryBreachTime);
         addOutput(answer);
         return answer;
     }
 
-    public AsyncTrackDefinition<Type> asyncTrack(String externalEndpoint, String callbackEndpoint, String aggregatorId, CallbackUrlAppender callbackUrlAppender,
+    public AsyncTrackDefinition<Type> asyncTrack(String externalEndpoint, String callbackEndpoint, HeterogeneousPayloadAggregator payloadAggregator, AsyncPayloadTransformer asyncPayloadTransformer,
                                                  AsyncAckExtractor asyncAckExtractor) {
-        return asyncTrack(simple(externalEndpoint), simple(callbackEndpoint), simple(aggregatorId), callbackUrlAppender, asyncAckExtractor);
+        return asyncTrack(simple(externalEndpoint), simple(callbackEndpoint), payloadAggregator, asyncPayloadTransformer, asyncAckExtractor);
     }
 
-    public AsyncTrackDefinition<Type> asyncTrack(String externalEndpoint, String callbackEndpoint, String aggregatorId, CallbackUrlAppender callbackUrlAppender,
+    public AsyncTrackDefinition<Type> asyncTrack(String externalEndpoint, String callbackEndpoint, HeterogeneousPayloadAggregator payloadAggregator, AsyncPayloadTransformer asyncPayloadTransformer,
                                                  AsyncAckExtractor asyncAckExtractor, Long expiryBreachTime) {
-        return asyncTrack(simple(externalEndpoint), simple(callbackEndpoint), simple(aggregatorId), callbackUrlAppender, asyncAckExtractor, expiryBreachTime);
+        return asyncTrack(simple(externalEndpoint), simple(callbackEndpoint), payloadAggregator, asyncPayloadTransformer, asyncAckExtractor, expiryBreachTime);
     }
 
     /**

@@ -8,12 +8,16 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.cms.orchestrator.aggregator.HeterogeneousPayloadAggregator;
+import org.apache.camel.cms.orchestrator.aggregator.Payload;
+import org.apache.camel.cms.orchestrator.aggregator.PayloadAggregator;
 import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
 import org.apache.camel.cms.orchestrator.factory.JoinCallbackFactory;
 import org.apache.camel.cms.orchestrator.utils.PlatformUtils;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.main.Main;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -105,6 +109,32 @@ public class JoinableForkJoinRouteTest extends TestCase {
 
         @Override
         public void configure() throws Exception {
+            HeterogeneousPayloadAggregator heterogeneousPayloadAggregator = new HeterogeneousPayloadAggregator() {
+                @Override
+                public Payload aggregate(Payload existing, Payload increment) throws IOException, ClassNotFoundException {
+                    return null;
+                }
+
+                @Override
+                public Class getExistingType() {
+                    return null;
+                }
+
+                @Override
+                public Class getIncrementType() {
+                    return null;
+                }
+
+                @Override
+                public Class getOutputType() {
+                    return null;
+                }
+
+                @Override
+                public String getId() {
+                    return "uvwAggregator";
+                }
+            };
             from("direct:start")
                     .process(new Processor() {
                         @Override
@@ -130,9 +160,30 @@ public class JoinableForkJoinRouteTest extends TestCase {
                             assertEquals(rid1, PlatformUtils.getRequestId(exchange));
                         }
                     })
-                    .waitForChildren("uvwAggregatorId", "uvwEndpoint")
+                    .waitForChildren(heterogeneousPayloadAggregator, "uvwEndpoint")
                     .to("mock:results");
 
+            PayloadAggregator payloadAggregator = new PayloadAggregator() {
+                @Override
+                public Payload aggregate(Payload existing, Payload increment) throws IOException, ClassNotFoundException {
+                    return null;
+                }
+
+                @Override
+                public Class getExistingType() {
+                    return null;
+                }
+
+                @Override
+                public Class getIncrementType() {
+                    return null;
+                }
+
+                @Override
+                public String getId() {
+                    return "xyzAggregatorId";
+                }
+            };
             from("direct:childProcess")
                     .process(new Processor() {
                         @Override
@@ -152,8 +203,8 @@ public class JoinableForkJoinRouteTest extends TestCase {
                             assertEquals(rid2, PlatformUtils.getRequestId(exchange));
                         }
                     })
-                    .waitForChildren("abcAggregatorId", "abcEndpoint")
-                    .join("abcAggregatorId");
+                    .waitForChildren(heterogeneousPayloadAggregator, "abcEndpoint")
+                    .join(payloadAggregator);
 
             from("direct:childProcess2")
                     .process(new Processor() {
@@ -165,7 +216,7 @@ public class JoinableForkJoinRouteTest extends TestCase {
                             assertEquals(0, exchange.getIn().getHeader("XYZ-0"));
                         }
                     })
-                    .join("xyzAggregatorId");
+                    .join(payloadAggregator);
 
             from("direct:childProcess3")
                     .process(new Processor() {
@@ -176,7 +227,7 @@ public class JoinableForkJoinRouteTest extends TestCase {
                             assertEquals(rid2, PlatformUtils.getParentRequestId(exchange));
                         }
                     })
-                    .join("xyzAggregatorId");
+                    .join(payloadAggregator);
 
             from("direct:joinCallback")
                     .process(new Processor() {
@@ -213,7 +264,7 @@ public class JoinableForkJoinRouteTest extends TestCase {
                             assertEquals(rid11, PlatformUtils.getParentRequestId(exchange));
                         }
                     })
-                    .join("xyzAggregatorId");
+                    .join(payloadAggregator);
 
             from("direct:2childProcess2")
                     .process(new Processor() {
@@ -224,7 +275,7 @@ public class JoinableForkJoinRouteTest extends TestCase {
                             assertEquals(rid11, PlatformUtils.getParentRequestId(exchange));
                         }
                     })
-                    .join("xyzAggregatorId");
+                    .join(payloadAggregator);
         }
     }
 }

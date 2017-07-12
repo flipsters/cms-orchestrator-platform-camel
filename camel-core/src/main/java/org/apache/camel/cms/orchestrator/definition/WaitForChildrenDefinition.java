@@ -3,6 +3,7 @@ package org.apache.camel.cms.orchestrator.definition;
 import com.google.common.collect.Lists;
 import org.apache.camel.Expression;
 import org.apache.camel.Processor;
+import org.apache.camel.cms.orchestrator.aggregator.HeterogeneousPayloadAggregator;
 import org.apache.camel.cms.orchestrator.factory.JoinCallbackFactory;
 import org.apache.camel.cms.orchestrator.processor.WaitForChildrenProcessor;
 import org.apache.camel.model.ProcessorDefinition;
@@ -32,14 +33,14 @@ import static org.apache.camel.builder.SimpleBuilder.simple;
 public class WaitForChildrenDefinition<Type extends ProcessorDefinition<Type>> extends RecipientListDefinition<Type> {
 
     @XmlAttribute(required = true)
-    private Expression aggregatorIdExpression;
+    private HeterogeneousPayloadAggregator payloadAggregator;
 
     @XmlAttribute(required = true)
     private Expression callbackEndpointExpression;
 
-    public WaitForChildrenDefinition(Expression aggregatorIdExpression, Expression callbackEndpointExpression) {
+    public WaitForChildrenDefinition(HeterogeneousPayloadAggregator payloadAggregator, Expression callbackEndpointExpression) {
         super(simple(JoinCallbackFactory.getCallbackEndpoint()));
-        this.aggregatorIdExpression = aggregatorIdExpression;
+        this.payloadAggregator = payloadAggregator;
         this.callbackEndpointExpression = callbackEndpointExpression;
     }
 
@@ -50,12 +51,12 @@ public class WaitForChildrenDefinition<Type extends ProcessorDefinition<Type>> e
 
     @Override
     public String getLabel() {
-        return "Join[" + aggregatorIdExpression + ", " + callbackEndpointExpression + ", " + super.getLabel() + "]";
+        return "Join[" + payloadAggregator.getId() + ", " + callbackEndpointExpression + ", " + super.getLabel() + "]";
     }
 
     @Override
     public Processor createProcessor(RouteContext routeContext) throws Exception {
-        ObjectHelper.notNull(aggregatorIdExpression, "aggregatorId", this);
+        ObjectHelper.notNull(payloadAggregator, "payloadAggregator", this);
         ObjectHelper.notNull(callbackEndpointExpression, "callbackEndpoint", this);
         Pipeline pipeline = (Pipeline) super.createProcessor(routeContext);
         List<Processor> processors = Lists.newArrayList(pipeline.getProcessors());
@@ -68,11 +69,11 @@ public class WaitForChildrenDefinition<Type extends ProcessorDefinition<Type>> e
         WaitForChildrenProcessor waitForChildrenProcessor = null;
         String delimiter = getDelimiter();
         if (delimiter == null) {
-            waitForChildrenProcessor = new WaitForChildrenProcessor(routeContext.getCamelContext(), expression, aggregatorIdExpression,
+            waitForChildrenProcessor = new WaitForChildrenProcessor(routeContext.getCamelContext(), expression, payloadAggregator,
                     callbackEndpointExpression, threadPool, shutdownThreadPool, recipientList);
         } else {
             waitForChildrenProcessor = new WaitForChildrenProcessor(routeContext.getCamelContext(), expression, delimiter,
-                    aggregatorIdExpression, callbackEndpointExpression, threadPool, shutdownThreadPool, recipientList);
+                payloadAggregator, callbackEndpointExpression, threadPool, shutdownThreadPool, recipientList);
         }
         processors.set(1, waitForChildrenProcessor);
         return Pipeline.newInstance(pipeline.getCamelContext(), processors);

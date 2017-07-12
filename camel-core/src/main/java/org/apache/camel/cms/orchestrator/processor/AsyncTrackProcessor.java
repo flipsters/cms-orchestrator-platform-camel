@@ -10,10 +10,7 @@ import org.apache.camel.AsyncCallback;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.Expression;
-import org.apache.camel.cms.orchestrator.aggregator.AsyncAckExtractor;
-import org.apache.camel.cms.orchestrator.aggregator.CallbackUrlAppender;
-import org.apache.camel.cms.orchestrator.aggregator.Payload;
-import org.apache.camel.cms.orchestrator.aggregator.RequestIdentifier;
+import org.apache.camel.cms.orchestrator.aggregator.*;
 import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
 import org.apache.camel.cms.orchestrator.factory.ExpiryStoreFactory;
 import org.apache.camel.cms.orchestrator.factory.MappingStoreFactory;
@@ -38,9 +35,9 @@ public class AsyncTrackProcessor extends RecipientList {
     private static final Logger LOG = LoggerFactory.getLogger(AsyncTrackProcessor.class);
 
     private Expression callbackEndpointExpression;
-    private Expression aggregatorIdExpression;
+    private String aggregatorId;
     private AsyncAckExtractor asyncAckExtractor;
-    private CallbackUrlAppender callbackUrlAppender;
+    private AsyncPayloadTransformer asyncPayloadTransformer;
     private RecipientList asyncCallbackRecipientList;
     private AggregateStore aggregateStore;
     private MappingStore mappingStore;
@@ -48,15 +45,15 @@ public class AsyncTrackProcessor extends RecipientList {
     private Long expiryBreachTime;
 
     public AsyncTrackProcessor(CamelContext camelContext, Expression expression, Expression callbackEndpointExpression,
-                               Expression aggregatorIdExpression, CallbackUrlAppender callbackUrlAppender, AsyncAckExtractor asyncAckExtractor,
+                               HeterogeneousPayloadAggregator payloadAggregator, AsyncPayloadTransformer asyncPayloadTransformer, AsyncAckExtractor asyncAckExtractor,
                                RecipientList asyncCallbackRecipientList, ExecutorService threadPool, boolean shutdownThreadPool,
                                RecipientList recipientList, Long expiryBreachTime) {
-        this(camelContext, expression, PARENT_REQUEST_ID_DELIM, callbackEndpointExpression, aggregatorIdExpression, callbackUrlAppender, asyncAckExtractor,
+        this(camelContext, expression, PARENT_REQUEST_ID_DELIM, callbackEndpointExpression, payloadAggregator, asyncPayloadTransformer, asyncAckExtractor,
                 asyncCallbackRecipientList, threadPool, shutdownThreadPool, recipientList, expiryBreachTime);
     }
 
     public AsyncTrackProcessor(CamelContext camelContext, Expression expression, String delimiter, Expression callbackEndpointExpression,
-                               Expression aggregatorIdExpression, CallbackUrlAppender callbackUrlAppender, AsyncAckExtractor asyncAckExtractor, RecipientList asyncCallbackRecipientList,
+                               HeterogeneousPayloadAggregator payloadAggregator, AsyncPayloadTransformer asyncPayloadTransformer, AsyncAckExtractor asyncAckExtractor, RecipientList asyncCallbackRecipientList,
                                ExecutorService threadPool, boolean shutdownThreadPool, RecipientList recipientList, Long expiryBreachTime) {
         super(camelContext, expression, delimiter);
         setAggregationStrategy(recipientList.getAggregationStrategy());
@@ -72,9 +69,9 @@ public class AsyncTrackProcessor extends RecipientList {
         setExecutorService(threadPool);
         setShutdownExecutorService(shutdownThreadPool);
         this.callbackEndpointExpression = callbackEndpointExpression;
-        this.aggregatorIdExpression = aggregatorIdExpression;
+        this.aggregatorId = payloadAggregator.getId();
         this.asyncAckExtractor = asyncAckExtractor;
-        this.callbackUrlAppender = callbackUrlAppender;
+        this.asyncPayloadTransformer = asyncPayloadTransformer;
         this.asyncCallbackRecipientList = asyncCallbackRecipientList;
         this.asyncCallbackRecipientList.setShareUnitOfWork(true); // Force setting
         this.asyncCallbackRecipientList.setDelimiter(PARENT_REQUEST_ID_DELIM); // Force setting
@@ -104,10 +101,10 @@ public class AsyncTrackProcessor extends RecipientList {
 
     @Override
     public String toString() {
-        return "AsyncTrack(" + callbackEndpointExpression + ", " + aggregatorIdExpression + ", " + super.toString() + ")";
+        return "AsyncTrack(" + callbackEndpointExpression + ", " + aggregatorId + ", " + super.toString() + ")";
     }
 
-    private boolean postProcess(String requestId, Payload originalPayload, Exchange exchange, String trackId, String tenantId) throws Exception {
+    private boolean postProcess(String requestId, Payload originalPayload, Exchange exchange, String trackId) throws Exception {
         LOG.info("Extracting track ID for request ID " + requestId);
         RequestIdentifier requestIdentifier = asyncAckExtractor.getRequestIdentifier(exchange);
         Set<String> coreHeaderTitles = Sets.newHashSet(OrchestratorUtils.getCoreHeaderTitles());
@@ -120,7 +117,6 @@ public class AsyncTrackProcessor extends RecipientList {
         String externalTenantId = requestIdentifier.getTenantId();
         // call map table and store the information over there
         LOG.info("Obtained track ID " + trackId + " for request ID " + requestId);
-        String aggregatorId = aggregatorIdExpression.evaluate(exchange, String.class);
         String callbackEndpoint = callbackEndpointExpression.evaluate(exchange, String.class);
         byte[] rawPayload = ByteUtils.getByteArrayFromPayload(getCamelContext().getTypeConverterRegistry(), originalPayload);
         boolean isResumable = aggregateStore.createAsync(trackId, callbackEndpoint, rawPayload, aggregatorId);
@@ -135,14 +131,13 @@ public class AsyncTrackProcessor extends RecipientList {
     @Override
     public void process(Exchange exchange) throws Exception {
         String requestId = PlatformUtils.getRequestId(exchange);
-        String tentantId = PlatformUtils.getTenantId(exchange);
         Payload originalPayload = ByteUtils.createPayload(exchange);
-        String trackId = callbackUrlAppender.mergeCallback(exchange);
+        String trackId = asyncPayloadTransformer.transform(exchange);
         ExpiryEntry expiryEntry = new ExpiryEntry(expiryBreachTime, trackId, requestId);
         expiryStore.putExpiry(expiryEntry);
         super.process(exchange);
         if (exchange.getException() == null) {
-            boolean isResumable = postProcess(requestId, originalPayload, exchange, trackId, tentantId);
+            boolean isResumable = postProcess(requestId, originalPayload, exchange, trackId);
             if (isResumable) {
                 asyncCallbackRecipientList.process(exchange);
             }
@@ -153,14 +148,13 @@ public class AsyncTrackProcessor extends RecipientList {
     public boolean process(Exchange exchange, final AsyncCallback callback) {
         try {
             String requestId = PlatformUtils.getRequestId(exchange);
-            String tentantId = PlatformUtils.getTenantId(exchange);
             Payload originalPayload = ByteUtils.createPayload(exchange);
-            String trackId = callbackUrlAppender.mergeCallback(exchange);
+            String trackId = asyncPayloadTransformer.transform(exchange);
             ExpiryEntry expiryEntry = new ExpiryEntry(expiryBreachTime, trackId, requestId);
             expiryStore.putExpiry(expiryEntry);
             boolean process = super.process(exchange, callback);
             if (exchange.getException() == null) {
-                boolean isResumable = postProcess(requestId, originalPayload, exchange, trackId, tentantId);
+                boolean isResumable = postProcess(requestId, originalPayload, exchange, trackId);
                 if (isResumable) {
                     asyncCallbackRecipientList.process(exchange);
                 }

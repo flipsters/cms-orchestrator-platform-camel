@@ -4,7 +4,8 @@ import com.google.common.collect.Lists;
 import org.apache.camel.Expression;
 import org.apache.camel.Processor;
 import org.apache.camel.cms.orchestrator.aggregator.AsyncAckExtractor;
-import org.apache.camel.cms.orchestrator.aggregator.CallbackUrlAppender;
+import org.apache.camel.cms.orchestrator.aggregator.AsyncPayloadTransformer;
+import org.apache.camel.cms.orchestrator.aggregator.HeterogeneousPayloadAggregator;
 import org.apache.camel.cms.orchestrator.processor.AsyncTrackProcessor;
 import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.model.ProcessorDefinitionHelper;
@@ -37,13 +38,13 @@ public class AsyncTrackDefinition<Type extends ProcessorDefinition<Type>> extend
     private Expression callbackEndpointExpression;
 
     @XmlAttribute(required = true)
-    private Expression aggregatorIdExpression;
+    private HeterogeneousPayloadAggregator payloadAggregator;
 
     @XmlAttribute(required = true)
     private AsyncAckExtractor asyncAckExtractor;
 
     @XmlAttribute(required = true)
-    private CallbackUrlAppender callbackUrlAppender;
+    private AsyncPayloadTransformer asyncPayloadTransformer;
 
     @XmlAttribute(required = true)
     private RecipientListDefinition<Type> asyncCallbackDefinition;
@@ -52,21 +53,21 @@ public class AsyncTrackDefinition<Type extends ProcessorDefinition<Type>> extend
     private Long expiryBreachTime;
 
     public AsyncTrackDefinition(Expression externalEndpoint, Expression callbackEndpointExpression,
-                                Expression aggregatorIdExpression, CallbackUrlAppender callbackUrlAppender, AsyncAckExtractor asyncAckExtractor,
+                                HeterogeneousPayloadAggregator payloadAggregator, AsyncPayloadTransformer asyncPayloadTransformer, AsyncAckExtractor asyncAckExtractor,
                                 RecipientListDefinition<Type> asyncCallbackDefinition, Long expiryBreachTime) {
         super(externalEndpoint);
         this.callbackEndpointExpression = callbackEndpointExpression;
-        this.aggregatorIdExpression = aggregatorIdExpression;
-        this.callbackUrlAppender = callbackUrlAppender;
+        this.payloadAggregator = payloadAggregator;
+        this.asyncPayloadTransformer = asyncPayloadTransformer;
         this.asyncAckExtractor = asyncAckExtractor;
         this.asyncCallbackDefinition = asyncCallbackDefinition;
         this.expiryBreachTime = expiryBreachTime;
     }
 
     public AsyncTrackDefinition(Expression externalEndpoint, Expression callbackEndpointExpression,
-                                Expression aggregatorIdExpression, CallbackUrlAppender callbackUrlAppender, AsyncAckExtractor asyncAckExtractor,
+                                HeterogeneousPayloadAggregator payloadAggregator, AsyncPayloadTransformer asyncPayloadTransformer, AsyncAckExtractor asyncAckExtractor,
                                 RecipientListDefinition<Type> asyncCallbackDefinition) {
-        this(externalEndpoint, callbackEndpointExpression, aggregatorIdExpression, callbackUrlAppender, asyncAckExtractor, asyncCallbackDefinition, null);
+        this(externalEndpoint, callbackEndpointExpression, payloadAggregator, asyncPayloadTransformer, asyncAckExtractor, asyncCallbackDefinition, null);
     }
 
     @Override
@@ -76,15 +77,15 @@ public class AsyncTrackDefinition<Type extends ProcessorDefinition<Type>> extend
 
     @Override
     public String getLabel() {
-        return "AsyncTrack[" + callbackEndpointExpression + ", " + aggregatorIdExpression + ", " + super.getLabel() + "]";
+        return "AsyncTrack[" + callbackEndpointExpression + ", " + payloadAggregator.getId() + ", " + super.getLabel() + "]";
     }
 
     @Override
     public Processor createProcessor(RouteContext routeContext) throws Exception {
         ObjectHelper.notNull(callbackEndpointExpression, "callbackEndpoint", this);
-        ObjectHelper.notNull(aggregatorIdExpression, "aggregatorId", this);
+        ObjectHelper.notNull(payloadAggregator, "payloadAggregator", this);
         ObjectHelper.notNull(asyncAckExtractor, "asyncAckExtractor", this);
-        ObjectHelper.notNull(callbackUrlAppender, "callbackUrlAppender", this);
+        ObjectHelper.notNull(asyncPayloadTransformer, "callbackUrlAppender", this);
         Pipeline pipeline = (Pipeline) super.createProcessor(routeContext);
         List<Processor> processors = Lists.newArrayList(pipeline.getProcessors());
         RecipientList recipientList = (RecipientList) processors.get(1);
@@ -100,10 +101,10 @@ public class AsyncTrackDefinition<Type extends ProcessorDefinition<Type>> extend
         RecipientList asyncCallbackRecipientList = (RecipientList) asyncCallbackProcessors.get(1);
         if (delimiter == null) {
             asyncTrackProcessor = new AsyncTrackProcessor(routeContext.getCamelContext(), expression, callbackEndpointExpression,
-                    aggregatorIdExpression, callbackUrlAppender, asyncAckExtractor, asyncCallbackRecipientList, threadPool, shutdownThreadPool, recipientList, expiryBreachTime);
+                payloadAggregator, asyncPayloadTransformer, asyncAckExtractor, asyncCallbackRecipientList, threadPool, shutdownThreadPool, recipientList, expiryBreachTime);
         } else {
             asyncTrackProcessor = new AsyncTrackProcessor(routeContext.getCamelContext(), expression, delimiter,
-                    callbackEndpointExpression, aggregatorIdExpression, callbackUrlAppender, asyncAckExtractor, asyncCallbackRecipientList, threadPool,
+                    callbackEndpointExpression, payloadAggregator, asyncPayloadTransformer, asyncAckExtractor, asyncCallbackRecipientList, threadPool,
                     shutdownThreadPool, recipientList, expiryBreachTime);
         }
         processors.set(1, asyncTrackProcessor);

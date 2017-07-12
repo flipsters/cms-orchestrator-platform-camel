@@ -5,6 +5,7 @@ import org.apache.camel.Endpoint;
 import org.apache.camel.ExchangePattern;
 import org.apache.camel.Expression;
 import org.apache.camel.Processor;
+import org.apache.camel.cms.orchestrator.aggregator.PayloadAggregator;
 import org.apache.camel.cms.orchestrator.factory.JoinCallbackFactory;
 import org.apache.camel.cms.orchestrator.processor.ForkProcessor;
 import org.apache.camel.cms.orchestrator.processor.JoinProcessor;
@@ -36,11 +37,11 @@ import static org.apache.camel.builder.SimpleBuilder.simple;
 public class JoinDefinition<Type extends ProcessorDefinition<Type>> extends RecipientListDefinition<Type> {
 
     @XmlAttribute(required = true)
-    private Expression aggregatorIdExpression;
+    private PayloadAggregator payloadAggregator;
 
-    public JoinDefinition(Expression aggregatorIdExpression) {
+    public JoinDefinition(PayloadAggregator payloadAggregator) {
         super(simple(JoinCallbackFactory.getCallbackEndpoint()));
-        this.aggregatorIdExpression = aggregatorIdExpression;
+        this.payloadAggregator = payloadAggregator;
     }
 
     @Override
@@ -50,12 +51,12 @@ public class JoinDefinition<Type extends ProcessorDefinition<Type>> extends Reci
 
     @Override
     public String getLabel() {
-        return "Join[" + aggregatorIdExpression + ", " + super.getLabel() + "]";
+        return "Join[" + payloadAggregator.getId() + ", " + super.getLabel() + "]";
     }
 
     @Override
     public Processor createProcessor(RouteContext routeContext) throws Exception {
-        ObjectHelper.notNull(aggregatorIdExpression, "aggregatorId", this);
+        ObjectHelper.notNull(payloadAggregator, "payloadAggregator", this);
         Pipeline pipeline = (Pipeline) super.createProcessor(routeContext);
         List<Processor> processors = Lists.newArrayList(pipeline.getProcessors());
         RecipientList recipientList = (RecipientList) processors.get(1);
@@ -67,9 +68,9 @@ public class JoinDefinition<Type extends ProcessorDefinition<Type>> extends Reci
         JoinProcessor joinProcessor = null;
         String delimiter = getDelimiter();
         if (delimiter == null) {
-            joinProcessor = new JoinProcessor(routeContext.getCamelContext(), expression, aggregatorIdExpression, threadPool, shutdownThreadPool, recipientList);
+            joinProcessor = new JoinProcessor(routeContext.getCamelContext(), expression, payloadAggregator, threadPool, shutdownThreadPool, recipientList);
         } else {
-            joinProcessor = new JoinProcessor(routeContext.getCamelContext(), expression, delimiter, aggregatorIdExpression, threadPool, shutdownThreadPool, recipientList);
+            joinProcessor = new JoinProcessor(routeContext.getCamelContext(), expression, delimiter, payloadAggregator, threadPool, shutdownThreadPool, recipientList);
         }
         processors.set(1, joinProcessor);
         return Pipeline.newInstance(pipeline.getCamelContext(), processors);

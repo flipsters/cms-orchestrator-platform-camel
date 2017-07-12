@@ -3,6 +3,7 @@ package org.apache.camel.cms.orchestrator.processor;
 import flipkart.cms.aggregator.client.AggregateStore;
 import flipkart.cms.aggregator.model.JoinResponse;
 import org.apache.camel.*;
+import org.apache.camel.cms.orchestrator.aggregator.HeterogeneousPayloadAggregator;
 import org.apache.camel.cms.orchestrator.aggregator.Payload;
 import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
 import org.apache.camel.cms.orchestrator.utils.ByteUtils;
@@ -23,16 +24,16 @@ public class WaitForChildrenProcessor extends org.apache.camel.processor.Recipie
 
     private static final Logger LOG = LoggerFactory.getLogger(WaitForChildrenProcessor.class);
 
-    private Expression aggregatorIdExpression;
+    private String aggregatorId;
     private Expression callbackEndpointExpression;
     private AggregateStore aggregateStore;
 
-    public WaitForChildrenProcessor(CamelContext camelContext, Expression expression, Expression aggregatorIdExpression, Expression callbackEndpointExpression,
+    public WaitForChildrenProcessor(CamelContext camelContext, Expression expression, HeterogeneousPayloadAggregator payloadAggregator, Expression callbackEndpointExpression,
                                     ExecutorService threadPool, boolean shutdownThreadPool, RecipientList recipientList) {
-        this(camelContext, expression, PARENT_REQUEST_ID_DELIM, aggregatorIdExpression, callbackEndpointExpression, threadPool, shutdownThreadPool, recipientList);
+        this(camelContext, expression, PARENT_REQUEST_ID_DELIM, payloadAggregator, callbackEndpointExpression, threadPool, shutdownThreadPool, recipientList);
     }
 
-    public WaitForChildrenProcessor(CamelContext camelContext, Expression expression, String delimiter, Expression aggregatorIdExpression,
+    public WaitForChildrenProcessor(CamelContext camelContext, Expression expression, String delimiter, HeterogeneousPayloadAggregator payloadAggregator,
                                     Expression callbackEndpointExpression, ExecutorService threadPool, boolean shutdownThreadPool, RecipientList recipientList) {
         super(camelContext, expression, delimiter);
         setAggregationStrategy(recipientList.getAggregationStrategy());
@@ -47,20 +48,19 @@ public class WaitForChildrenProcessor extends org.apache.camel.processor.Recipie
         setTimeout(recipientList.getTimeout());
         setExecutorService(threadPool);
         setShutdownExecutorService(shutdownThreadPool);
-        this.aggregatorIdExpression = aggregatorIdExpression;
+        this.aggregatorId = payloadAggregator.getId();
         this.callbackEndpointExpression = callbackEndpointExpression;
         aggregateStore = AggregateStoreFactory.getStoreInstance();
     }
 
     @Override
     public String toString() {
-        return "Join(" + aggregatorIdExpression + ", " + callbackEndpointExpression + ", " + super.toString() + ")";
+        return "Join(" + aggregatorId + ", " + callbackEndpointExpression + ", " + super.toString() + ")";
     }
 
     private boolean preProcess(Exchange exchange) throws Exception {
         String requestId = PlatformUtils.getRequestId(exchange);
         Payload payload = ByteUtils.createPayload(exchange);
-        String aggregatorId = aggregatorIdExpression.evaluate(exchange, String.class);
         String callbackEndpoint = callbackEndpointExpression.evaluate(exchange, String.class);
         byte[] rawPayload = ByteUtils.getByteArrayFromPayload(getCamelContext().getTypeConverterRegistry(), payload);
         JoinResponse joinResponse = aggregateStore.joinWithWait(requestId, callbackEndpoint, rawPayload, aggregatorId, exchange.getFromRouteId());

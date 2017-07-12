@@ -4,6 +4,7 @@ import flipkart.cms.aggregator.client.AggregateStore;
 import flipkart.cms.aggregator.model.JoinResponse;
 import org.apache.camel.*;
 import org.apache.camel.cms.orchestrator.aggregator.Payload;
+import org.apache.camel.cms.orchestrator.aggregator.PayloadAggregator;
 import org.apache.camel.cms.orchestrator.factory.AggregateStoreFactory;
 import org.apache.camel.cms.orchestrator.utils.ByteUtils;
 import org.apache.camel.cms.orchestrator.utils.OrchestratorUtils;
@@ -24,15 +25,15 @@ public class JoinProcessor extends RecipientList {
 
     private static final Logger LOG = LoggerFactory.getLogger(JoinProcessor.class);
 
-    private Expression aggregatorIdExpression;
+    private String aggregatorId;
     private AggregateStore aggregateStore;
 
-    public JoinProcessor(CamelContext camelContext, Expression expression, Expression aggregatorIdExpression, ExecutorService threadPool,
-                                 boolean shutdownThreadPool, RecipientList recipientList) {
-        this(camelContext, expression, PARENT_REQUEST_ID_DELIM, aggregatorIdExpression, threadPool, shutdownThreadPool, recipientList);
+    public JoinProcessor(CamelContext camelContext, Expression expression, PayloadAggregator payloadAggregator, ExecutorService threadPool,
+                         boolean shutdownThreadPool, RecipientList recipientList) {
+        this(camelContext, expression, PARENT_REQUEST_ID_DELIM, payloadAggregator, threadPool, shutdownThreadPool, recipientList);
     }
 
-    public JoinProcessor(CamelContext camelContext, Expression expression, String delimiter, Expression aggregatorIdExpression,
+    public JoinProcessor(CamelContext camelContext, Expression expression, String delimiter, PayloadAggregator payloadAggregator,
                                  ExecutorService threadPool, boolean shutdownThreadPool, RecipientList recipientList) {
         super(camelContext, expression, delimiter);
         setAggregationStrategy(recipientList.getAggregationStrategy());
@@ -47,13 +48,13 @@ public class JoinProcessor extends RecipientList {
         setTimeout(recipientList.getTimeout());
         setExecutorService(threadPool);
         setShutdownExecutorService(shutdownThreadPool);
-        this.aggregatorIdExpression = aggregatorIdExpression;
+        this.aggregatorId = payloadAggregator.getId();
         aggregateStore = AggregateStoreFactory.getStoreInstance();
     }
 
     @Override
     public String toString() {
-        return "Join(" + aggregatorIdExpression + ", " + super.toString() + ")";
+        return "Join(" + aggregatorId + ", " + super.toString() + ")";
     }
 
     private boolean preProcess(Exchange exchange) throws Exception {
@@ -61,7 +62,6 @@ public class JoinProcessor extends RecipientList {
         String parentRequestId = PlatformUtils.getParentRequestId(exchange);
         Payload payload = ByteUtils.createPayload(exchange);
         OrchestratorUtils.removeCoreHeaders(payload.getHeaders());
-        String aggregatorId = aggregatorIdExpression.evaluate(exchange, String.class);
         byte[] rawPayload = ByteUtils.getByteArrayFromPayload(getCamelContext().getTypeConverterRegistry(), payload);
         JoinResponse joinResponse = aggregateStore.join(parentRequestId, requestId, rawPayload, aggregatorId);
         boolean isJoinable = joinResponse.isJoinable();

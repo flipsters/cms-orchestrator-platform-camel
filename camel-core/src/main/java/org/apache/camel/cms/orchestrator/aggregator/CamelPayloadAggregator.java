@@ -27,11 +27,11 @@ public class CamelPayloadAggregator<I,O> implements Aggregator {
       existingPayload = PayloadUtils.getPayload(existing, aggregator.getExistingType(), typeConverterRegistry);
       incrementalPayload = PayloadUtils.getPayload(incremental, aggregator.getIncrementType(), typeConverterRegistry);
       Map<String, Object> coreHeaders = PayloadUtils.getCoreHeaders(existingPayload, incrementalPayload);
-      Payload aggregate = aggregator.aggregate(existingPayload, incrementalPayload);
+      Payload<O> aggregate = aggregator.aggregate(existingPayload, incrementalPayload);
       aggregate.getHeaders().putAll(coreHeaders);
       return PayloadUtils.createPayloadByteArray(aggregate, aggregator.getExistingType(), typeConverterRegistry);
     } catch (IOException | ClassNotFoundException e) {
-      log.error("Not able to deserialize the byte array!!");
+      log.error("Not able to deserialize the byte array!!", e);
       throw new RuntimeException("Not able to deserialize bytes");
     }
   }

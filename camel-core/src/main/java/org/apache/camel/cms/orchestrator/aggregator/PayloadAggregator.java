@@ -21,13 +21,13 @@ public interface PayloadAggregator<I,O> {
    * provide the type converters for the mentioned type to and from byte[].
    * @return the type of the overall computed payload. This would be used for deserialization.
      */
-  Class getExistingType();
+  Class<O> getExistingType();
 
   /**
    * provide the type converters for the mentioned type to and from byte[].
    * @return the type of the incremental payload. This would be used for deserialization.
      */
-  Class getIncrementType();
+  Class<I> getIncrementType();
 
   /**
    * return the aggregator ID which would be referenced in the aggregator store.

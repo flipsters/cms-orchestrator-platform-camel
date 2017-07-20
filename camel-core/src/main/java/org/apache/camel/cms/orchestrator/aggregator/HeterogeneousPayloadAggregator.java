@@ -21,19 +21,19 @@ public interface HeterogeneousPayloadAggregator<A,B,C> {
      * provide the type converters for the mentioned type to and from byte[].
      * @return the type of the overall computed payload. This would be used for deserialization.
      */
-    Class getExistingType();
+    Class<A> getExistingType();
 
     /**
      * provide the type converters for the mentioned type to and from byte[].
      * @return the type of the incremental payload. This would be used for deserialization.
      */
-    Class getIncrementType();
+    Class<B> getIncrementType();
 
     /**
      * provide the type converters for the mentioned type to and from byte[].
      * @return the type of the output payload. This would be used for deserialization.
      */
-    Class getOutputType();
+    Class<C> getOutputType();
 
     /**
      * return the aggregator ID which would be referenced in the aggregator store.

@@ -53,7 +53,7 @@ public class PayloadUtils {
      * @throws IOException
      * @throws ClassNotFoundException
      */
-    public static byte[] createPayloadByteArray(Payload payload, Class bodyType, TypeConverterRegistry typeConverterRegistry)
+    public static <T> byte[] createPayloadByteArray(Payload<T> payload, Class<T> bodyType, TypeConverterRegistry typeConverterRegistry)
         throws IOException, ClassNotFoundException {
         TypeConverter lookup = typeConverterRegistry.lookup(byte[].class, bodyType);
         if (lookup != null) {

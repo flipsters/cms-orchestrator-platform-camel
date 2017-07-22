@@ -16,8 +16,40 @@
  */
 package org.apache.camel.model;
 
-import org.apache.camel.*;
-import org.apache.camel.builder.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlAnyAttribute;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.namespace.QName;
+
+import org.apache.camel.Channel;
+import org.apache.camel.Endpoint;
+import org.apache.camel.ErrorHandlerFactory;
+import org.apache.camel.Exchange;
+import org.apache.camel.ExchangePattern;
+import org.apache.camel.Expression;
+import org.apache.camel.LoggingLevel;
+import org.apache.camel.Predicate;
+import org.apache.camel.Processor;
+import org.apache.camel.Route;
+import org.apache.camel.builder.DataFormatClause;
+import org.apache.camel.builder.ExpressionBuilder;
+import org.apache.camel.builder.ExpressionClause;
+import org.apache.camel.builder.ProcessorBuilder;
+
 import org.apache.camel.cms.orchestrator.aggregator.AsyncAckExtractor;
 import org.apache.camel.cms.orchestrator.aggregator.AsyncPayloadTransformer;
 import org.apache.camel.cms.orchestrator.aggregator.HeterogeneousPayloadAggregator;
@@ -36,16 +68,14 @@ import org.apache.camel.processor.interceptor.Delayer;
 import org.apache.camel.processor.interceptor.HandleFault;
 import org.apache.camel.processor.interceptor.StreamCaching;
 import org.apache.camel.processor.loadbalancer.LoadBalancer;
-import org.apache.camel.spi.*;
+import org.apache.camel.spi.DataFormat;
+import org.apache.camel.spi.IdempotentRepository;
+import org.apache.camel.spi.InterceptStrategy;
+import org.apache.camel.spi.LifecycleStrategy;
+import org.apache.camel.spi.Policy;
+import org.apache.camel.spi.RouteContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.xml.bind.annotation.*;
-import javax.xml.namespace.QName;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.camel.builder.SimpleBuilder.simple;
 

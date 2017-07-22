@@ -52,7 +52,7 @@
     <module>camel-jetty9</module>
     <!-- camel-jetty is used to republish the camel-jetty8 -->
     <module>camel-jetty</module>
-    <!--module>camel-cxf</module-->
+    <module>camel-cxf</module>
     <module>camel-cxf-transport</module>
     <module>camel-web-standalone</module>
     <module>camel-jms</module>
@@ -92,7 +92,7 @@
     <module>camel-dropbox</module>
     <module>camel-eclipse</module>
     <module>camel-ejb</module>
-    <!--module>camel-elasticsearch</module-->
+    <module>camel-elasticsearch</module>
     <module>camel-eventadmin</module>
     <module>camel-exec</module>
     <module>camel-facebook</module>
@@ -113,11 +113,11 @@
     <module>camel-guice</module>
     <module>camel-hawtdb</module>
     <module>camel-hazelcast</module>
-    <!--module>camel-hbase</module-->
+    <module>camel-hbase</module>
     <module>camel-hdfs</module>
     <module>camel-hdfs2</module>
     <module>camel-hipchat</module>
-    <!--module>camel-hl7</module-->
+    <module>camel-hl7</module>
     <module>camel-ibatis</module>
     <module>camel-ical</module>
     <module>camel-infinispan</module>
@@ -162,9 +162,9 @@
     <module>camel-mybatis</module>
     <module>camel-nagios</module>
     <module>camel-netty</module>
-    <!--module>camel-netty4</module-->
+    <module>camel-netty4</module>
     <module>camel-netty-http</module>
-    <!--module>camel-netty4-http</module-->
+    <module>camel-netty4-http</module>
     <module>camel-ognl</module>
     <module>camel-olingo2</module>
     <module>camel-openshift</module>
@@ -185,7 +185,7 @@
     <module>camel-rx</module>
     <module>camel-sap-netweaver</module>
     <module>camel-saxon</module>
-    <!--module>camel-salesforce</module-->
+    <module>camel-salesforce</module>
     <module>camel-schematron</module>
     <module>camel-scr</module>
     <module>camel-script</module>

@@ -31,9 +31,9 @@
 
   <modules>
     <module>camel-package-maven-plugin</module>
-    <!--module>camel-maven-plugin</module-->
+    <module>camel-maven-plugin</module>
     <module>camel-eip-documentation-enricher-maven-plugin</module>
-    <!--module>guice-maven-plugin</module-->
+    <module>guice-maven-plugin</module>
     <module>camel-api-component-maven-plugin</module>
   </modules>
 
@@ -47,6 +47,36 @@
       <artifactId>maven-project</artifactId>
     </dependency>
   </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-plugin-plugin</artifactId>
+          <version>3.4</version>
+          <configuration>
+            <!-- see http://jira.codehaus.org/browse/MNG-5346 -->
+            <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
+          </configuration>
+          <executions>
+            <execution>
+              <id>mojo-descriptor</id>
+              <goals>
+                  <goal>descriptor</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>help-goal</id>
+              <goals>
+                  <goal>helpmojo</goal>
+              </goals>
+            </execution>
+          </executions>
+          </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
 
   <reporting>
     <plugins>

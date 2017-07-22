@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.apache.camel</groupId>
     <artifactId>camel-salesforce-parent</artifactId>
-    <version>2.15.7-SNAPSHOT</version>
+    <version>2.15.7.patched-2-SNAPSHOT</version>
   </parent>
 
   <groupId>org.apache.camel.maven</groupId>
@@ -99,6 +99,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
+        <version>3.4</version>
         <configuration>
           <goalPrefix>camel-salesforce</goalPrefix>
           <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>

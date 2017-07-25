@@ -65,7 +65,7 @@ public class AsyncTrackRouteTest extends TestCase {
                         public void process(Exchange exchange) throws Exception {
                         }
                     })
-                    .asyncTrack(simple("direct:externalEndpoint"), simple("callbackEndpoint"), header("aggregatorId"), null, null)// TODO : fix this
+                    .asyncTrack(simple("direct:externalEndpoint"), simple("callbackEndpoint"), null, null, null)// TODO : fix this
                     .to("mock:results");
 
             from("direct:externalEndpoint")

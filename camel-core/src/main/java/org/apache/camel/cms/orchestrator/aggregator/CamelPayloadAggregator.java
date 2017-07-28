@@ -101,13 +101,16 @@ public class CamelPayloadAggregator<I,O> implements Aggregator {
   public byte[] createPayloadByteArray(Payload payload, Class bodyType)
       throws IOException, ClassNotFoundException {
     TypeConverter lookup = typeConverterRegistry.lookup(byte[].class, bodyType);
+    byte[] payloadByte;
     if (lookup != null) {
-      byte[] payloadByte = lookup.convertTo(byte[].class, payload.getBody());
-      Payload<byte[]> finalPayload = new Payload<>(payloadByte, payload.getHeaders());
-      return typeConverterRegistry.lookup(byte[].class, Payload.class).convertTo(byte[].class, finalPayload);
+      payloadByte = lookup.convertTo(byte[].class, payload.getBody());
+    } else if (bodyType.equals(byte[].class)) {
+      payloadByte = (byte[]) payload.getBody();
     } else {
       log.error("Type converter from {} to byte[] not found.", bodyType);
       throw new RuntimeException("Type converter from " + bodyType + " to byte[] not found");
     }
+    Payload<byte[]> finalPayload = new Payload<>(payloadByte, payload.getHeaders());
+    return typeConverterRegistry.lookup(byte[].class, Payload.class).convertTo(byte[].class, finalPayload);
   }
 }

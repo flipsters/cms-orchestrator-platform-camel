@@ -75,6 +75,9 @@ public class KafkaConfiguration {
     private Integer sessionTimeoutMs = 30000;
     @UriParam(label = "consumer", defaultValue = "2147483647")
     private Integer maxPollRecords;
+    // Dummy element to avoid issues faced with higher kafka component version
+    @UriParam(label = "consumer", defaultValue = "true")
+    private Boolean breakOnFirstError = true;
     @UriParam(label = "consumer", defaultValue = "5000")
     private Long pollTimeoutMs = 5000L;
     //auto.offset.reset1
@@ -1157,6 +1160,14 @@ public class KafkaConfiguration {
      */
     public void setMaxPollRecords(Integer maxPollRecords) {
         this.maxPollRecords = maxPollRecords;
+    }
+
+    public Boolean getBreakOnFirstError() {
+        return breakOnFirstError;
+    }
+
+    public void setBreakOnFirstError(Boolean breakOnFirstError) {
+        this.breakOnFirstError = breakOnFirstError;
     }
 
     public Long getPollTimeoutMs() {

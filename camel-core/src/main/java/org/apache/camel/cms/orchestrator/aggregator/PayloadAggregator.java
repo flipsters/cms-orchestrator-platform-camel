@@ -15,7 +15,7 @@ public interface PayloadAggregator<I,O> {
    * @throws IOException
    * @throws ClassNotFoundException
    */
-  Payload<O> aggregate(Payload<O> existing, Payload<I> increment) throws IOException, ClassNotFoundException;
+  Payload<O> aggregate(Payload<O> existing, Payload<I> increment) throws Exception;
 
   /**
    * provide the type converters for the mentioned type to and from byte[].

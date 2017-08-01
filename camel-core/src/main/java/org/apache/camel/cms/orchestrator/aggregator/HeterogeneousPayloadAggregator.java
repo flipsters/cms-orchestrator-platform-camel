@@ -15,7 +15,7 @@ public interface HeterogeneousPayloadAggregator<A,B,C> {
      * @throws IOException
      * @throws ClassNotFoundException
      */
-    Payload<C> aggregate(Payload<A> existing, Payload<B> increment) throws IOException, ClassNotFoundException;
+    Payload<C> aggregate(Payload<A> existing, Payload<B> increment) throws Exception;
 
     /**
      * provide the type converters for the mentioned type to and from byte[].

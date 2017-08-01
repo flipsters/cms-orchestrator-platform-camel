@@ -20,7 +20,7 @@ public class CamelHeterogeneousPayloadAggregator<A,B,C> implements Aggregator {
     private TypeConverterRegistry typeConverterRegistry;
 
     @Override
-    public byte[] aggregate(byte[] existing, byte[] increment) {
+    public byte[] aggregate(byte[] existing, byte[] increment) throws Exception {
         Payload<A> existingPayload;
         Payload<B> incrementalPayload;
         try {

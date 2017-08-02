@@ -2,6 +2,7 @@ package org.apache.camel.cms.orchestrator.utils;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.cms.orchestrator.OrchestratorConstants;
+import org.apache.camel.cms.orchestrator.aggregator.Payload;
 import org.apache.camel.cms.orchestrator.exception.NoRequestIdPresentException;
 import org.apache.commons.lang.StringUtils;
 
@@ -17,6 +18,10 @@ public class ForkUtils {
 
     public static String getRequestId(Exchange exchange) {
         return exchange.getIn().getHeader(OrchestratorConstants.REQUEST_ID_HEADER, String.class);
+    }
+
+    public static String getRequestId(Payload payload) {
+        return (String) payload.getHeaders().get(OrchestratorConstants.REQUEST_ID_HEADER);
     }
 
     private static String[] getParentRequestIdStack(Exchange exchange) {

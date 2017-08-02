@@ -2,6 +2,7 @@ package org.apache.camel.cms.orchestrator.utils;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.cms.orchestrator.OrchestratorConstants;
+import org.apache.camel.cms.orchestrator.aggregator.Payload;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.Map;
@@ -13,6 +14,10 @@ public class PlatformUtils {
 
     public static String getRequestId(Exchange exchange) {
         return ForkUtils.getRequestId(exchange);
+    }
+
+    public static String getRequestId(Payload payload) {
+        return ForkUtils.getRequestId(payload);
     }
 
     public static String getTenantId(Exchange exchange) {
@@ -41,6 +46,16 @@ public class PlatformUtils {
         }
         return requestId + OrchestratorConstants.PARENT_REQUEST_ID_DELIM + parentIdStack;
     }
+
+    public static String requestIdStack(Payload payload) {
+        String requestId = getRequestId(payload);
+        String parentIdStack = (String) payload.getHeaders().get(OrchestratorConstants.PARENT_REQUEST_ID_HEADER);
+        if (StringUtils.isEmpty(parentIdStack)) {
+            return requestId;
+        }
+        return requestId + OrchestratorConstants.PARENT_REQUEST_ID_DELIM + parentIdStack;
+    }
+
     public static String getRequestPath(Exchange exchange) {
         return exchange.getIn().getHeader(OrchestratorConstants.PARENT_REQUEST_ID_HEADER, String.class);
     }
